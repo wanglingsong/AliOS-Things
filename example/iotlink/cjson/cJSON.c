@@ -122,20 +122,20 @@ typedef struct internal_hooks
 /* work around MSVC error C2322: '...' address of dillimport '...' is not static */
 static void *internal_malloc(size_t size)
 {
-    return malloc(size);
+    return aos_malloc(size);
 }
 static void internal_free(void *pointer)
 {
-    free(pointer);
+    aos_free(pointer);
 }
 static void *internal_realloc(void *pointer, size_t size)
 {
-    return realloc(pointer, size);
+    return aos_realloc(pointer, size);
 }
 #else
-#define internal_malloc malloc
-#define internal_free free
-#define internal_realloc realloc
+#define internal_malloc aos_malloc
+#define internal_free aos_free
+#define internal_realloc aos_realloc
 #endif
 
 static internal_hooks global_hooks = { internal_malloc, internal_free, internal_realloc };
@@ -172,7 +172,7 @@ CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
         return;
     }
 
-    global_hooks.allocate = malloc;
+    global_hooks.allocate = aos_malloc;
     if (hooks->malloc_fn != NULL)
     {
         global_hooks.allocate = hooks->malloc_fn;
@@ -186,9 +186,9 @@ CJSON_PUBLIC(void) cJSON_InitHooks(cJSON_Hooks* hooks)
 
     /* use realloc only if both free and malloc are used */
     global_hooks.reallocate = NULL;
-    if ((global_hooks.allocate == malloc) && (global_hooks.deallocate == free))
+    if ((global_hooks.allocate == aos_malloc) && (global_hooks.deallocate == aos_free))
     {
-        global_hooks.reallocate = realloc;
+        global_hooks.reallocate = aos_realloc;
     }
 }
 
