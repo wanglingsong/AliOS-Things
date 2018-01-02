@@ -20,7 +20,9 @@ static int jsonInt(const cJSON *json, char *key)
 static void readFromDummySource(void * link)
 {
     LINK* linkp = link;
-    linkp->payload = cJSON_Parse("{\"source\":\"dummy\"}");
+    cJSON *payload = cJSON_CreateObject();
+    cJSON_AddItemToObject(payload, "source", cJSON_CreateString("dummy"));
+    linkp->payload = payload;
     aos_post_delayed_action(0, linkp->writeFunc, link);
     int interval = jsonInt(linkp->sourceConfig, "interval");
     if (interval > 0) {
