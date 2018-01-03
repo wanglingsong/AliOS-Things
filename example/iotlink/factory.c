@@ -4,7 +4,7 @@
 
 static cJSON* jsonObj(const cJSON *json, char *key)
 {
-    return cJSON_GetObjectItemCaseSensitive(json, key);
+    return cJSON_GetObjectItem(json, key);
 }
 
 static char* jsonStr(const cJSON *json, char *key)
