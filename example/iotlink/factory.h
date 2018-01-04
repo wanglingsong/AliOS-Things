@@ -11,4 +11,4 @@ typedef struct LINK
     void *payload;
 } LINK;
 
-LINK* iotlink_createLink(const cJSON * config);
+LINK* iotlink_createLink(cJSON * config);

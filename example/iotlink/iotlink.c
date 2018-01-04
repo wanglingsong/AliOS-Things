@@ -12,8 +12,8 @@ int application_start(int argc, char *argv[])
 {
     // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"test\",\"password\":\"12345678\"},\"links\":[{\"source\":{\"module\":\"dht11Source\",\"options\":{\"pin\":4,\"interval\":10000}},\"target\":{\"module\":\"MqttTarget\",\"options\":{\"topic\":\"topic1\",\"host\":\"mqtt\"}}}]}");
     cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"test\",\"password\":\"12345678\"},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"dummy\"}}]}");
-    const cJSON *linksConfig = cJSON_GetObjectItem(root, "links");
-    const cJSON *linkConfig;
+    cJSON *linksConfig = cJSON_GetObjectItem(root, "links");
+    cJSON *linkConfig;
     for(linkConfig = (linksConfig != NULL) ? (linksConfig)->child : NULL; linkConfig != NULL; linkConfig = linkConfig->next)
     {
         LINK *link = iotlink_createLink(linkConfig);
