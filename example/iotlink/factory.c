@@ -1,50 +1,41 @@
+#include <string.h>
 #include <aos/aos.h>
 #include <hal/soc/soc.h>
-#include <factory.h>
-#include <string.h>
+#include <cJSON.h>
+#include <types.h>
+#include <util.h>
 
-static cJSON* jsonObj(cJSON *json, char *key)
-{
-    return cJSON_GetObjectItem(json, key);
-}
+#if defined(IOT_LINK_MQTT)
+#include <mqtt.h>
+#endif
 
-static char* jsonStr(cJSON *json, char *key)
+static void readFromDummySource(void *arg)
 {
-    return jsonObj(json, key)->valuestring;
-}
-
-static int jsonInt(cJSON *json, char *key)
-{
-    return jsonObj(json, key)->valueint;
-}
-
-static void readFromDummySource(void *link)
-{
-    LINK* linkp = link;
+    LINK* link = arg;
     cJSON *payload = cJSON_CreateObject();
     cJSON_AddItemToObject(payload, "source", cJSON_CreateString("dummy"));
-    linkp->payload = payload;
-    aos_post_delayed_action(0, linkp->writeFunc, link);
-    int interval = jsonInt(linkp->sourceConfig, "interval");
+    link->payload = payload;
+    aos_post_delayed_action(0, link->writeFunc, arg);
+    int interval = jsonInt(link->sourceConfig, "interval");
     if (interval > 0) {
-        aos_post_delayed_action(interval, readFromDummySource, link);
+        aos_post_delayed_action(interval, readFromDummySource, arg);
     }
 }
 
-static void writeToDummyTarget(void *link)
+static void writeToDummyTarget(void *arg)
 {
-    LINK* linkp = link;
-    char *str = cJSON_Print(linkp->payload);
+    LINK* link = arg;
+    char *str = cJSON_Print(link->payload);
     LOG("Dummy Target received: %s\r\n", str);
     aos_free(str);
-    cJSON_Delete(linkp->payload);
-    linkp->payload = NULL;
+    cJSON_Delete(link->payload);
+    link->payload = NULL;
 }
 
 static void generateTriggerPayload(bool b, LINK *link)
 {
     cJSON *payload = cJSON_CreateObject();
-    cJSON_AddItemToObject(payload, "source", cJSON_CreateString("gpio"));
+    cJSON_AddItemToObject(payload, "source", cJSON_CreateString("button"));
     cJSON_AddItemToObject(payload, "type", cJSON_CreateString("boolean"));
     cJSON_AddItemToObject(payload, "payload", b ? cJSON_CreateTrue() : cJSON_CreateFalse());
     link->payload = payload;
@@ -61,7 +52,7 @@ static void irg_falling_handler(void *arg)
     generateTriggerPayload(false, arg);
 }
 
-static void readFromGpioTrigger(void *arg)
+static void readFromButtonSource(void *arg)
 {
     LINK* linkp = arg;
     gpio_dev_t *gpio = aos_malloc(sizeof(gpio_dev_t));
@@ -73,33 +64,43 @@ static void readFromGpioTrigger(void *arg)
     hal_gpio_enable_irq(gpio, IRQ_TRIGGER_FALLING_EDGE, irg_falling_handler, link);
 }
 
-static void readFromButtonSource(void *link)
-{
-    // TODO
-}
-
 static void writeToLedTarget(void *link)
 {
     // TODO
 }
 
-static void readFromMqttSource(void *link)
+#if defined(IOT_LINK_MQTT)
+
+static void setMqttSource(input_event_t *event, void *arg)
 {
-    // TODO
+    LINK* link = arg;
+    link->readFunc = readFromMqttSource;
+    aos_post_event(EV_LINK_UPDATED, 0, 0);
 }
 
-static void writeToMqttTarget(void *link)
+static void setMqttTarget(input_event_t *event, void *arg)
 {
-    // TODO
+    LINK* link = arg;
+    link->writeFunc = writeToMqttTarget;
+    aos_post_event(EV_LINK_UPDATED, 0, 0);
 }
+
+#endif
 
 static void createSource(LINK *link, cJSON *config)
 {
     char *type = jsonStr(config, "type");
     if (strcmp(type, "dummy") == 0) {
         link->readFunc = readFromDummySource;
-    } else if (strcmp(type, "gpio-trigger") == 0) {
-        link->readFunc = readFromGpioTrigger;
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
+    // } else if (strcmp(type, "button") == 0) {
+    //     link->readFunc = readFromButtonSource;
+
+#if defined(IOT_LINK_MQTT)
+    } else if (strcmp(type, "mqtt") == 0) {
+        aos_register_event_filter(EV_MQTT_CONNETED, setMqttSource, link);
+#endif
+
     } else {
         // TODO
     }
@@ -110,6 +111,13 @@ static void createTarget(LINK *link, cJSON *config)
     char *type = jsonStr(config, "type");
     if (strcmp(type, "dummy") == 0) {
         link->writeFunc = writeToDummyTarget;
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
+        
+#if defined(IOT_LINK_MQTT)
+    } else if (strcmp(type, "mqtt") == 0) {
+        aos_register_event_filter(EV_MQTT_CONNETED, setMqttTarget, link);
+#endif
+
     } else {
         // TODO
     }
@@ -125,4 +133,17 @@ LINK* iotlink_createLink(cJSON *config)
     createSource(link, sourceConfig);
     createTarget(link, targetConfig);
     return link;
+}
+
+TRANSPORT* iotlink_createTransports(cJSON *config)
+{
+    char *type = jsonStr(config, "type");
+
+#if defined(IOT_LINK_MQTT)
+    if (strcmp(type, "mqtt") == 0) {
+        return createMqttTransport(config);
+    }
+#endif
+
+    return NULL;    
 }

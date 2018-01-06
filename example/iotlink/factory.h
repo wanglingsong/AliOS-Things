@@ -1,14 +1,5 @@
-#include <cJSON.h>
+// #include <types.h>
 
-typedef void (*FUNC)(void*);
+LINK* iotlink_createLink(cJSON *config);
 
-typedef struct LINK
-{
-    cJSON *sourceConfig;
-    FUNC readFunc;
-    cJSON *targetConfig;
-    FUNC writeFunc;
-    void *payload;
-} LINK;
-
-LINK* iotlink_createLink(cJSON * config);
+TRANSPORT* iotlink_createTransports(cJSON *config);
