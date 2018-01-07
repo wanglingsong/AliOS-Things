@@ -1,7 +1,5 @@
-// #include <types.h>
+void sourceMqtt(void *link);
 
-void readFromMqttSource(void *link);
-
-void writeToMqttTarget(void *link);
+void targetMqtt(void *link);
 
 TRANSPORT* createMqttTransport(cJSON *config);

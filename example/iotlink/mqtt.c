@@ -9,7 +9,7 @@
 
 #define MSG_LEN_MAX             (2048)
 
-static void *gpclient;
+static void *gpclient = NULL;
 
 static char *msg_buf = NULL, *msg_readbuf = NULL;
 
@@ -152,7 +152,7 @@ static int createMqttClient(void *arg)
     return rc;
 }
 
-static void wifi_service_event(input_event_t *event, void *priv_data) {
+static void wifiServiceEvent(input_event_t *event, void *priv_data) {
     LOG("wifi_service_event with type:%d and code:%d", event->type, event->code);
     if (event->type != EV_WIFI) {
         return;
@@ -172,7 +172,7 @@ static void wifi_service_event(input_event_t *event, void *priv_data) {
     }
 }
 
-static void _demo_message_arrive(void *pcontext, void *pclient, iotx_mqtt_event_msg_pt msg)
+static void subscibedMessageArrive(void *pcontext, void *pclient, iotx_mqtt_event_msg_pt msg)
 {
     LINK *link = pcontext;
     iotx_mqtt_topic_info_pt ptopic_info = (iotx_mqtt_topic_info_pt) msg->msg;
@@ -180,7 +180,7 @@ static void _demo_message_arrive(void *pcontext, void *pclient, iotx_mqtt_event_
                   ptopic_info->ptopic,
                   ptopic_info->payload);
     if (!link->running) {
-        IOT_MQTT_Unsubscribe(link->transport->client, jsonStr(link->sourceConfig, "topic"));
+        IOT_MQTT_Unsubscribe(pclient, jsonStr(link->sourceConfig, "topic"));
         return;
     }
     cJSON *payload = cJSON_CreateObject();
@@ -191,13 +191,13 @@ static void _demo_message_arrive(void *pcontext, void *pclient, iotx_mqtt_event_
     aos_post_delayed_action(0, link->writeFunc, link);
 }
 
-void readFromMqttSource(void *arg)
+void sourceMqtt(void *arg)
 {
     LINK *link = arg;
     if (NULL == (link->transport->client)) {
         LOG("Not ready to read from MQTT source");
     } else {
-        IOT_MQTT_Subscribe(link->transport->client, jsonStr(link->sourceConfig, "topic"), IOTX_MQTT_QOS1, _demo_message_arrive, link);
+        IOT_MQTT_Subscribe(link->transport->client, jsonStr(link->sourceConfig, "topic"), IOTX_MQTT_QOS1, subscibedMessageArrive, link);
     }
 }
 
@@ -218,7 +218,7 @@ static void publish(void *arg)
     aos_free(msg);
 }
 
-void writeToMqttTarget(void *arg)
+void targetMqtt(void *arg)
 {
     LINK* link = arg;
     if (NULL == link->transport->client) {
@@ -232,8 +232,8 @@ void writeToMqttTarget(void *arg)
 
 TRANSPORT* createMqttTransport(cJSON *config)
 {
-    TRANSPORT *transport = aos_malloc(sizeof(TRANSPORT));
+    TRANSPORT *transport = aos_zalloc(sizeof(TRANSPORT));
     transport->config = config;
-    aos_register_event_filter(EV_WIFI, wifi_service_event, transport);
+    aos_register_event_filter(EV_WIFI, wifiServiceEvent, transport);
     return transport;
 }

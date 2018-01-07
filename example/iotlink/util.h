@@ -1,5 +1,3 @@
-// #include <cJSON.h>
-
 cJSON* jsonObj(cJSON *json, char *key);
 
 char* jsonStr(cJSON *json, char *key);

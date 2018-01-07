@@ -1,5 +1,3 @@
-// #include <types.h>
+LINK* createLink(cJSON *config);
 
-LINK* iotlink_createLink(cJSON *config);
-
-TRANSPORT* iotlink_createTransports(cJSON *config);
+TRANSPORT* createTransports(cJSON *config);

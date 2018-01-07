@@ -1,6 +1,6 @@
 NAME := iotlink
 
-$(NAME)_SOURCES := util.c mqtt.c factory.c iotlink.c
+$(NAME)_SOURCES := util.c mqtt.c dummy.c gpio.c factory.c iotlink.c
 
 # GLOBAL_DEFINES += AOS_NO_WIFI
 GLOBAL_DEFINES += IOT_LINK_WIFI IOT_LINK_MQTT
