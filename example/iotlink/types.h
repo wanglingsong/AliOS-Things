@@ -24,4 +24,5 @@ typedef struct LINK
     // TODO FUNC writeStop;
     void *payload;
     TRANSPORT *transport;
+    bool running;
 } LINK;

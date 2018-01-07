@@ -12,6 +12,9 @@
 static void readFromDummySource(void *arg)
 {
     LINK* link = arg;
+    if (!link->running) {
+        return;
+    }
     cJSON *payload = cJSON_CreateObject();
     cJSON_AddItemToObject(payload, "source", cJSON_CreateString("dummy"));
     link->payload = payload;
@@ -132,6 +135,7 @@ LINK* iotlink_createLink(cJSON *config)
     link->targetConfig = targetConfig;
     createSource(link, sourceConfig);
     createTarget(link, targetConfig);
+    link->running = false;
     return link;
 }
 

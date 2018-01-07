@@ -9,20 +9,28 @@
 #include <netmgr.h>
 #endif
 
-static void runLink(input_event_t *event, void * arg)
+static void runLink(input_event_t *event, void *arg)
 {
     LINK *link = arg;
+    LOG("runLink triggerred with running:%d, readFunc pointer:%p and writeFunc pointer:%p", link->running, link->readFunc, link->writeFunc);
     if (link->readFunc != NULL && link->writeFunc != NULL) {
-        (*(link->readFunc))(link);
+        if (!link->running) {
+            LOG("Start link");
+            link->running = true;
+            (*(link->readFunc))(link);
+        } else {
+            LOG("Skip link");
+        }
     } else {
-        // TODO
+        LOG("Link not ready");
     }
 }
 
 int application_start(int argc, char *argv[])
 {
+    aos_set_log_level(AOS_LL_DEBUG);
     // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"test\",\"password\":\"12345678\"},\"links\":[{\"source\":{\"module\":\"dht11Source\",\"options\":{\"pin\":4,\"interval\":10000}},\"target\":{\"module\":\"MqttTarget\",\"options\":{\"topic\":\"topic1\",\"host\":\"mqtt\"}}}]}");
-    cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"w86l07s13\"},\"transport\":{\"type\":\"mqtt\"},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"dummy\"}}]}");
+    cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"TP-LINK_7B4CC6\",\"password\":\"w19l86s07\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"m2m.eclipse.org\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"iotlink001\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"dummy\"}}]}");
     cJSON *linksConfig = cJSON_GetObjectItem(root, "links");
     cJSON *linkConfig;
     TRANSPORT *transport = iotlink_createTransports(jsonObj(root, "transport"));
@@ -34,8 +42,6 @@ int application_start(int argc, char *argv[])
     }
 
 #if defined(IOT_LINK_WIFI)
-    // TODO wifi and create transport
-    // aos_set_log_level(AOS_LL_INFO);
     cJSON *wifi = cJSON_GetObjectItem(root, "wifi");
 	netmgr_init();
     netmgr_ap_config_t netmgrConfig;
