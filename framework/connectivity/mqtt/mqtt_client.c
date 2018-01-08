@@ -232,7 +232,7 @@ static int iotx_mc_check_rule(char *iterm, iotx_mc_topic_type_t type)
 // 0, topic name is valid; NOT 0, topic name is invalid
 static int iotx_mc_check_topic(const char *topicName, iotx_mc_topic_type_t type)
 {
-    if (NULL == topicName || '/' != topicName[0]) {
+    if (NULL == topicName) {
         return FAIL_RETURN;
     }
 
@@ -1822,20 +1822,20 @@ static int iotx_mc_set_connect_params(iotx_mc_client_t *pClient, MQTTPacket_conn
     pClient->connect_data.will.retained = pConnectParams->will.retained;
 
     if (pConnectParams->keepAliveInterval < KEEP_ALIVE_INTERVAL_DEFAULT_MIN) {
-        log_warning("Input heartbeat interval(%d ms) < Allowed minimum(%d ms)",
+        LOG("Input heartbeat interval(%d ms) < Allowed minimum(%d ms)",
                     (pConnectParams->keepAliveInterval * 1000),
                     (KEEP_ALIVE_INTERVAL_DEFAULT_MIN * 1000)
                    );
-        log_warning("Reset heartbeat interval => %d Millisecond",
+        LOG("Reset heartbeat interval => %d Millisecond",
                     (KEEP_ALIVE_INTERVAL_DEFAULT_MIN * 1000)
                    );
         pClient->connect_data.keepAliveInterval = KEEP_ALIVE_INTERVAL_DEFAULT_MIN;
     } else if (pConnectParams->keepAliveInterval > KEEP_ALIVE_INTERVAL_DEFAULT_MAX) {
-        log_warning("Input heartbeat interval(%d ms) > Allowed maximum(%d ms)",
+        LOG("Input heartbeat interval(%d ms) > Allowed maximum(%d ms)",
                     (pConnectParams->keepAliveInterval * 1000),
                     (KEEP_ALIVE_INTERVAL_DEFAULT_MAX * 1000)
                    );
-        log_warning("Reset heartbeat interval => %d Millisecond",
+        LOG("Reset heartbeat interval => %d Millisecond",
                     (KEEP_ALIVE_INTERVAL_DEFAULT_MAX * 1000)
                    );
         pClient->connect_data.keepAliveInterval = KEEP_ALIVE_INTERVAL_DEFAULT_MAX;
@@ -1915,7 +1915,7 @@ static iotx_err_t iotx_mc_init(iotx_mc_client_t *pClient, iotx_mqtt_param_t *pIn
 
     pClient->ipstack = (utils_network_pt)LITE_malloc(sizeof(utils_network_t));
     if (NULL == pClient->ipstack) {
-        log_err("malloc Network failed");
+        LOG("malloc Network failed");
         rc = FAIL_RETURN;
         goto RETURN;
     }
@@ -1932,7 +1932,7 @@ static iotx_err_t iotx_mc_init(iotx_mc_client_t *pClient, iotx_mqtt_param_t *pIn
 #endif
     mc_state = IOTX_MC_STATE_INITIALIZED;
     rc = SUCCESS_RETURN;
-    log_info("MQTT init success!");
+    LOG("MQTT init success!");
 
 RETURN :
     if (rc != SUCCESS_RETURN) {
@@ -2264,17 +2264,17 @@ static int iotx_mc_connect(iotx_mc_client_t *pClient)
     rc = pClient->ipstack->connect(pClient->ipstack);
     if (SUCCESS_RETURN != rc) {
         pClient->ipstack->disconnect(pClient->ipstack);
-        log_err("TCP or TLS Connection failed");
+        LOG("TCP or TLS Connection failed");
 
         if (ERROR_CERTIFICATE_EXPIRED == rc) {
-            log_err("certificate is expired!");
+            LOG("certificate is expired!");
             return ERROR_CERT_VERIFY_FAIL;
         } else {
             return MQTT_NETWORK_CONNECT_ERROR;
         }
     }
 
-    log_debug("start MQTT connection with parameters: clientid=%s, username=%s, password=%s",
+    LOG("start MQTT connection with parameters: clientid=%s, username=%s, password=%s",
               pClient->connect_data.clientID.cstring,
               pClient->connect_data.username.cstring,
               pClient->connect_data.password.cstring);
@@ -2282,14 +2282,14 @@ static int iotx_mc_connect(iotx_mc_client_t *pClient)
     rc = MQTTConnect(pClient);
     if (rc  != SUCCESS_RETURN) {
         pClient->ipstack->disconnect(pClient->ipstack);
-        log_err("send connect packet failed");
+        LOG("send connect packet failed");
         return rc;
     }
 #ifdef STM32_USE_SPI_WIFI
     if (SUCCESS_RETURN != iotx_mc_wait_CONNACK(pClient)) {
         (void)MQTTDisconnect(pClient);
         pClient->ipstack->disconnect(pClient->ipstack);
-        log_err("wait connect ACK timeout, or receive a ACK indicating error!");
+        LOG("wait connect ACK timeout, or receive a ACK indicating error!");
         return MQTT_CONNECT_ERROR;
     }
 
@@ -2297,7 +2297,7 @@ static int iotx_mc_connect(iotx_mc_client_t *pClient)
 
     utils_time_countdown_ms(&pClient->next_ping_time, pClient->connect_data.keepAliveInterval * 1000);
 
-    log_info("mqtt connect success!");
+    LOG("mqtt connect success!");
 #else
     aos_poll_read_fd(get_ssl_fd(), cb_recv, pClient);
 #endif
@@ -2521,13 +2521,14 @@ void *IOT_MQTT_Construct(iotx_mqtt_param_t *pInitParams)
     STRING_PTR_SANITY_CHECK(pInitParams->client_id, NULL);
     STRING_PTR_SANITY_CHECK(pInitParams->username, NULL);
     STRING_PTR_SANITY_CHECK(pInitParams->password, NULL);
+    LOG("pass null check");
 
     pclient = (iotx_mc_client_t *)LITE_malloc(sizeof(iotx_mc_client_t));
     if (NULL == pclient) {
-        log_err("not enough memory.");
+        LOG("not enough memory.");
         return NULL;
     }
-
+    LOG("pclient initialized");
     err = iotx_mc_init(pclient, pInitParams);
     if (SUCCESS_RETURN != err) {
         LITE_free(pclient);
