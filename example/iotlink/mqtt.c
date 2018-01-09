@@ -210,11 +210,16 @@ static void subscibedMessageArrive(void *pcontext, void *pclient, iotx_mqtt_even
         IOT_MQTT_Unsubscribe(pclient, jsonStr(link->sourceConfig, "topic"));
         return;
     }
-    cJSON *payload = cJSON_CreateObject();
-    cJSON_AddItemToObject(payload, "source", cJSON_CreateString("mqtt"));
-    cJSON_AddItemToObject(payload, "type", cJSON_CreateString("string"));
-    cJSON_AddItemToObject(payload, "payload", cJSON_CreateString(ptopic_info->payload));
-    link->payload = payload;
+    // cJSON *payload = cJSON_CreateObject();
+    // cJSON_AddItemToObject(payload, "source", cJSON_CreateString("mqtt"));
+    // cJSON_AddItemToObject(payload, "type", cJSON_CreateString("string"));
+    // cJSON_AddItemToObject(payload, "payload", cJSON_CreateString(ptopic_info->payload));
+    // link->payload = payload;
+    IOTLINK_MESSAGE *message = aos_malloc(sizeof(IOTLINK_MESSAGE));
+    message->source = MESSAGE_SOURCE_MQTT;
+    message->type = MESSAGE_TYPE_STRING;
+    message->payload = "It's dummy message";
+    link->message = (void*)(ptopic_info->payload);
     aos_post_delayed_action(0, link->writeFunc, link);
 }
 
@@ -231,9 +236,7 @@ void sourceMqtt(void *arg)
 static void publishMqttMessage(void *arg)
 {
     LINK *link = arg;
-    char *msg = cJSON_Print(link->payload);
-    // char msg_pub[128];
-    // strcpy(msg_pub, msg);
+    char *msg = IOTLINK_PRINT_MESSAGE(link->message);
     iotx_mqtt_topic_info_t topic_msg;
     memset(&topic_msg, 0x0, sizeof(topic_msg));
     topic_msg.qos = IOTX_MQTT_QOS0;
@@ -249,6 +252,8 @@ static void publishMqttMessage(void *arg)
         LOG("Published mqtt message:%s to topic: %s", msg, topic);
     }
     aos_free(msg);
+    IOTLINK_FREE_MESSAGE(link->message);
+    link->message = NULL;
 }
 
 void targetMqtt(void *arg)
@@ -258,8 +263,6 @@ void targetMqtt(void *arg)
         LOG("Not ready to write to MQTT target");
     } else {
         publishMqttMessage(link);
-        cJSON_Delete(link->payload);
-        link->payload = NULL;
     }
 }
 

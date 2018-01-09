@@ -1,8 +1,8 @@
 #include <string.h>
 #include <aos/aos.h>
 #include <cJSON.h>
-#include <util.h>
 #include <types.h>
+#include <util.h>
 #include <factory.h>
 
 #if defined(IOT_LINK_WIFI)
@@ -30,8 +30,8 @@ int application_start(int argc, char *argv[])
 {
     aos_set_log_level(AOS_LL_DEBUG);
     // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"test\",\"password\":\"12345678\"},\"links\":[{\"source\":{\"module\":\"dht11Source\",\"options\":{\"pin\":4,\"interval\":10000}},\"target\":{\"module\":\"MqttTarget\",\"options\":{\"topic\":\"topic1\",\"host\":\"mqtt\"}}}]}");
-    // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"TP-LINK_7B4CC6\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"m2m.eclipse.org\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"iotlink001\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"dummy\"}}]}");
-    cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"TP-LINK_7B4CC6\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"m2m.eclipse.org\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"iotlink001\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotilnk-target\"}}]}");
+    // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"m2m.eclipse.org\",\"port\":1883,\"username\":\"abcdefgh\",\"password\":\"asdfsdfd\",\"clientId\":\"iotlink001\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}}]}");
+    cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"dummy\"}}]}");
     LOG("Parsed config json");
     cJSON *linksConfig = jsonObj(root, "links");
     cJSON *linkConfig;

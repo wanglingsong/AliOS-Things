@@ -6,11 +6,18 @@
 
 static void gpioTriggerHandler(bool b, LINK *link)
 {
-    cJSON *payload = cJSON_CreateObject();
-    cJSON_AddItemToObject(payload, "source", cJSON_CreateString("button"));
-    cJSON_AddItemToObject(payload, "type", cJSON_CreateString("boolean"));
-    cJSON_AddItemToObject(payload, "payload", b ? cJSON_CreateTrue() : cJSON_CreateFalse());
-    link->payload = payload;
+    // cJSON *payload = cJSON_CreateObject();
+    // cJSON_AddItemToObject(payload, "source", cJSON_CreateString("button"));
+    // cJSON_AddItemToObject(payload, "type", cJSON_CreateString("boolean"));
+    // cJSON_AddItemToObject(payload, "payload", b ? cJSON_CreateTrue() : cJSON_CreateFalse());
+    // link->payload = payload;
+    IOTLINK_MESSAGE *message = aos_malloc(sizeof(IOTLINK_MESSAGE));
+    message->source = MESSAGE_SOURCE_GPIO_TRIGGER;
+    message->type = MESSAGE_TYPE_BOOLEAN;
+    bool *bp = aos_malloc(sizeof(bool));
+    *bp = b;
+    message->payload = bp;
+    link->message = message;
     aos_post_delayed_action(0, link->writeFunc, link);
 }
 
