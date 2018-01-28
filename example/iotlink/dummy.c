@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <string.h>
 #include <aos/aos.h>
 #include <cJSON.h>
 #include <types.h>

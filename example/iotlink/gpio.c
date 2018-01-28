@@ -4,43 +4,36 @@
 #include <types.h>
 #include <util.h>
 
-static void gpioTriggerHandler(bool b, LINK *link)
+static void gpioTriggerHandler(void *arg)
 {
-    // cJSON *payload = cJSON_CreateObject();
-    // cJSON_AddItemToObject(payload, "source", cJSON_CreateString("button"));
-    // cJSON_AddItemToObject(payload, "type", cJSON_CreateString("boolean"));
-    // cJSON_AddItemToObject(payload, "payload", b ? cJSON_CreateTrue() : cJSON_CreateFalse());
-    // link->payload = payload;
+    void** args = arg;
+    gpio_dev_t *gpio = args[0];
+    LINK *link = args[1];
+    uint32_t value = 0;
+    hal_gpio_input_get(gpio, &value);
     IOTLINK_MESSAGE *message = aos_malloc(sizeof(IOTLINK_MESSAGE));
     message->source = MESSAGE_SOURCE_GPIO_TRIGGER;
     message->type = MESSAGE_TYPE_BOOLEAN;
     bool *bp = aos_malloc(sizeof(bool));
-    *bp = b;
+    *bp = value;
     message->payload = bp;
     link->message = message;
     aos_post_delayed_action(0, link->writeFunc, link);
 }
 
-static void gpioRisingHandler(void *arg)
-{
-    gpioTriggerHandler(true, arg);
-}
-
-static void gpioFallingHandler(void *arg)
-{
-    gpioTriggerHandler(false, arg);
-}
-
 void sourceGpioTrigger(void *arg)
 {
+    void** args = aos_malloc(sizeof(gpio_dev_t*) + sizeof(LINK*));
+    gpio_dev_t *gpio;
     LINK* link = arg;
-    gpio_dev_t *gpio = aos_zalloc(sizeof(gpio_dev_t));
+    gpio = aos_zalloc(sizeof(gpio_dev_t));
     int port = jsonInt(link->sourceConfig, "port");
     gpio->port = port;
-    gpio->config = INPUT_PULL_UP;
+    gpio->config = IRQ_MODE;
     hal_gpio_init(gpio);
-    hal_gpio_enable_irq(gpio, IRQ_TRIGGER_RISING_EDGE, gpioRisingHandler, arg);
-    hal_gpio_enable_irq(gpio, IRQ_TRIGGER_FALLING_EDGE, gpioFallingHandler, arg);
+    args[0] = gpio;
+    args[1] = link;
+    hal_gpio_enable_irq(gpio, IRQ_TRIGGER_BOTH_EDGES, gpioTriggerHandler, args);
 }
 
 void targetGpio(void *arg)

@@ -37,8 +37,8 @@ static void createSource(LINK *link, cJSON *config)
     if (strcmp(type, "dummy") == 0) {
         link->readFunc = sourceDummy;
         aos_post_event(EV_LINK_UPDATED, 0, 0);
-    // } else if (strcmp(type, "button") == 0) {
-    //     link->readFunc = sourceGpioTrigger;
+    } else if (strcmp(type, "irq") == 0) {
+        link->readFunc = sourceGpioTrigger;
 
 #if defined(IOT_LINK_MQTT)
     } else if (strcmp(type, "mqtt") == 0) {

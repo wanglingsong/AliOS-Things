@@ -35,8 +35,9 @@ char* IOTLINK_PRINT_MESSAGE(IOTLINK_MESSAGE *message)
     int strSize = sizeof(char) * 128;
     char *msgStr = aos_zalloc(strSize);
     if (message->type == MESSAGE_TYPE_BOOLEAN) {
-        snprintf(msgStr, strSize, "{\"source\":%d,\"type\":%d,\"payload\":%d}", message->source, message->type, message->payload);
+        snprintf(msgStr, strSize, "{\"source\":%d,\"type\":%d,\"payload\":%d}", message->source, message->type, *((bool*)(message->payload)));
     } else if (message->type == MESSAGE_TYPE_NUMBER) {
+        // TODO print number payload properly
         snprintf(msgStr, strSize, "{\"source\":%d,\"type\":%d,\"payload\":%d}", message->source, message->type, message->payload);
     } else if (message->type == MESSAGE_TYPE_STRING) {
         snprintf(msgStr, strSize, "{\"source\":%d,\"type\":%d,\"payload\":\"%s\"}", message->source, message->type, message->payload);
