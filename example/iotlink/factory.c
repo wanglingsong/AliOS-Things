@@ -6,6 +6,7 @@
 #include <util.h>
 #include <dummy.h>
 #include <gpio.h>
+#include <dht.h>
 
 #if defined(IOT_LINK_MQTT)
 #include <mqtt.h>
@@ -15,7 +16,7 @@
 
 static void setMqttSource(input_event_t *event, void *arg)
 {
-    LINK* link = arg;
+    LINK *link = arg;
     link->readFunc = sourceMqtt;
     LOG("set mqtt readFunc");
     aos_post_event(EV_LINK_UPDATED, 0, 0);
@@ -23,7 +24,7 @@ static void setMqttSource(input_event_t *event, void *arg)
 
 static void setMqttTarget(input_event_t *event, void *arg)
 {
-    LINK* link = arg;
+    LINK *link = arg;
     link->writeFunc = targetMqtt;
     LOG("set mqtt writeFunc");
     aos_post_event(EV_LINK_UPDATED, 0, 0);
@@ -34,18 +35,30 @@ static void setMqttTarget(input_event_t *event, void *arg)
 static void createSource(LINK *link, cJSON *config)
 {
     char *type = jsonStr(config, "type");
-    if (strcmp(type, "dummy") == 0) {
+    if (strcmp(type, "dummy") == 0)
+    {
         link->readFunc = sourceDummy;
         aos_post_event(EV_LINK_UPDATED, 0, 0);
-    } else if (strcmp(type, "irq") == 0) {
+    }
+    else if (strcmp(type, "irq") == 0)
+    {
         link->readFunc = sourceGpioTrigger;
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
+    }
+    else if (strcmp(type, "dht11") == 0)
+    {
+        link->readFunc = sourceDHT11;
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
 
 #if defined(IOT_LINK_MQTT)
-    } else if (strcmp(type, "mqtt") == 0) {
+    }
+    else if (strcmp(type, "mqtt") == 0)
+    {
         aos_register_event_filter(EV_MQTT_CONNETED, setMqttSource, link);
 #endif
-
-    } else {
+    }
+    else
+    {
         // TODO
     }
 }
@@ -53,22 +66,26 @@ static void createSource(LINK *link, cJSON *config)
 static void createTarget(LINK *link, cJSON *config)
 {
     char *type = jsonStr(config, "type");
-    if (strcmp(type, "dummy") == 0) {
+    if (strcmp(type, "dummy") == 0)
+    {
         link->writeFunc = targetDummy;
         aos_post_event(EV_LINK_UPDATED, 0, 0);
-        
+
 #if defined(IOT_LINK_MQTT)
-    } else if (strcmp(type, "mqtt") == 0) {
+    }
+    else if (strcmp(type, "mqtt") == 0)
+    {
         LOG("Creating mqtt target");
         aos_register_event_filter(EV_MQTT_CONNETED, setMqttTarget, link);
 #endif
-
-    } else {
+    }
+    else
+    {
         // TODO
     }
 }
 
-LINK* createLink(cJSON *config)
+LINK *createLink(cJSON *config)
 {
     LINK *link = aos_zalloc(sizeof(LINK));
     link->running = false;
@@ -81,15 +98,20 @@ LINK* createLink(cJSON *config)
     return link;
 }
 
-TRANSPORT* createTransports(cJSON *config)
+TRANSPORT *createTransports(cJSON *config)
 {
+    if (config == NULL)
+    {
+        return NULL;
+    }
     char *type = jsonStr(config, "type");
 
 #if defined(IOT_LINK_MQTT)
-    if (strcmp(type, "mqtt") == 0) {
+    if (strcmp(type, "mqtt") == 0)
+    {
         return createMqttTransport(config);
     }
 #endif
 
-    return NULL;    
+    return NULL;
 }
