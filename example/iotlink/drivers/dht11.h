@@ -6,11 +6,12 @@
 
 
 typedef struct {
+	
 	uint16_t humidity;
 	uint16_t temperature;
 } DHT11;
 
 
-bool dht11_read(DHT11 *ptdht11, gpio_dev_t *gpio);
+bool dht11_read(DHT11 *ptdht11, int port);
 
 #endif

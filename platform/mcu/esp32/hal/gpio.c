@@ -22,12 +22,12 @@ int32_t hal_gpio_init(aos_gpio_dev_t *gpio)
 {
     int32_t ret = -1;
     gpio_config_t io_conf;
-    
+
     if (gpio == NULL)
     {
         return -1;
     }
-        
+
     /* disable interrupt */
     io_conf.intr_type = GPIO_PIN_INTR_DISABLE;
     /* set mode */
@@ -35,14 +35,18 @@ int32_t hal_gpio_init(aos_gpio_dev_t *gpio)
     {
         io_conf.mode = GPIO_MODE_OUTPUT;
     }
-    else if ((gpio->config == OUTPUT_OPEN_DRAIN_NO_PULL) || 
-            (gpio->config == OUTPUT_OPEN_DRAIN_PULL_UP))
+    else if ((gpio->config == OUTPUT_OPEN_DRAIN_NO_PULL) ||
+             (gpio->config == OUTPUT_OPEN_DRAIN_PULL_UP))
     {
         io_conf.mode = GPIO_MODE_OUTPUT_OD;
     }
-    else if ((gpio->config == INPUT_PULL_UP) || 
-             (gpio->config == INPUT_PULL_DOWN) || 
-             (gpio->config == INPUT_HIGH_IMPEDANCE))
+    else if (gpio->config == INPUT_PULL_UP)
+    {
+        ret = gpio_set_direction(gpio->port, GPIO_MODE_INPUT);
+        return ret == 0 ? gpio_set_pull_mode(gpio->port, GPIO_PULLUP_ONLY) : ret;
+    }
+    else if ((gpio->config == INPUT_HIGH_IMPEDANCE) ||
+             (gpio->config == INPUT_PULL_DOWN))
     {
         io_conf.mode = GPIO_MODE_INPUT;
     }
@@ -61,9 +65,11 @@ int32_t hal_gpio_init(aos_gpio_dev_t *gpio)
     /* set pull-down mode */
     io_conf.pull_down_en = (gpio->config == INPUT_PULL_DOWN) ? 1 : 0;
     /* set pull-up mode */
-    io_conf.pull_up_en = ((gpio->config == INPUT_PULL_UP) || 
+    io_conf.pull_up_en = ((gpio->config == INPUT_PULL_UP) ||
                           (gpio->config == IRQ_MODE) ||
-                          (gpio->config == OUTPUT_OPEN_DRAIN_PULL_UP)) ? 1 : 0;
+                          (gpio->config == OUTPUT_OPEN_DRAIN_PULL_UP))
+                             ? 1
+                             : 0;
     /* configure GPIO with the given settings */
     ret = gpio_config(&io_conf);
 
@@ -99,7 +105,7 @@ int32_t hal_gpio_output_toggle(aos_gpio_dev_t *gpio)
         return -1;
     }
     /* toggle gpio by writing GPIO_OUT_REG register*/
-    REG_WRITE(GPIO_OUT_REG, (REG_READ(GPIO_OUT_REG)^BIT(gpio->port)));
+    REG_WRITE(GPIO_OUT_REG, (REG_READ(GPIO_OUT_REG) ^ BIT(gpio->port)));
     return 0;
 }
 
@@ -114,7 +120,7 @@ int32_t hal_gpio_input_get(aos_gpio_dev_t *gpio, uint32_t *value)
 }
 
 int32_t hal_gpio_enable_irq(aos_gpio_dev_t *gpio, gpio_irq_trigger_t trigger,
-                                     gpio_irq_handler_t handler, void *arg)
+                            gpio_irq_handler_t handler, void *arg)
 {
     int32_t ret = -1;
     if (gpio == NULL || arg == NULL)

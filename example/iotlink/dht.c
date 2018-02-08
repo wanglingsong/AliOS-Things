@@ -14,13 +14,10 @@ void sourceDHT11(void *arg)
         return;
     }
 
-    gpio_dev_t *gpio;
-    gpio = aos_malloc(sizeof(gpio_dev_t));
     int port = jsonInt(link->sourceConfig, "port");
-    gpio->port = port;
 
     DHT11 dht;
-    if (dht11_read(&dht, gpio))
+    if (dht11_read(&dht, port))
     {
         int strSize = sizeof(char) * 64;
         char *msgStr = aos_zalloc(strSize);
