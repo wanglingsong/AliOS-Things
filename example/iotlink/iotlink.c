@@ -19,7 +19,7 @@ static void runLink(input_event_t *event, void *arg)
         {
             LOG("Start link");
             link->running = true;
-            (*(link->readFunc))(link);
+            (*(link->readFunc))(arg);
         }
         else
         {
@@ -39,7 +39,9 @@ int application_start(int argc, char *argv[])
     // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"m2m.eclipse.org\",\"port\":1883,\"username\":\"abcdefgh\",\"password\":\"asdfsdfd\",\"clientId\":\"iotlink001\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}}]}");
     // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":1},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"dummy\"}}]}");
     // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"irq\",\"port\":15},\"target\":{\"type\":\"dummy\"}}]}");
-    cJSON *root = cJSON_Parse("{\"links\":[{\"source\":{\"type\":\"dht11\",\"port\":16,\"interval\":5000},\"target\":{\"type\":\"dummy\"}}]}");
+    // cJSON *root = cJSON_Parse("{\"links\":[{\"source\":{\"type\":\"irq\",\"port\":15},\"target\":{\"type\":\"dummy\"}},{\"source\":{\"type\":\"dht11\",\"port\":16,\"interval\":30000},\"target\":{\"type\":\"dummy\"}},{\"source\":{\"type\":\"dummy\",\"interval\":30000},\"target\":{\"type\":\"dummy\"}}]}");
+    cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"irq\",\"port\":15},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"dht11\",\"port\":16,\"interval\":30000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"dummy\",\"interval\":30000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"mqtt\",\"topic\":\"manual_input\"},\"target\":{\"type\":\"gpio\",\"port\":17}}]}");
+
     LOG("Parsed config json");
     cJSON *linksConfig = jsonObj(root, "links");
     cJSON *linkConfig;
@@ -50,8 +52,11 @@ int application_start(int argc, char *argv[])
         LOG("Creating link");
         LINK *link = createLink(linkConfig);
         link->transport = transport;
+        // TODO duplicated register happen
         aos_register_event_filter(EV_LINK_UPDATED, runLink, link);
         LOG("Link created");
+        setupLink(link);
+        LOG("Link setup");
     }
 
 #if defined(IOT_LINK_WIFI)

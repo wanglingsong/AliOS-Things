@@ -8,21 +8,24 @@
 #include <util.h>
 // #include "device.h"
 
-#define MSG_LEN_MAX             (2048)
+#define MSG_LEN_MAX (2048)
 
-#define PRODUCT_KEY             "BfKxBDSjWCH"
-#define DEVICE_NAME             "aos_mqtt_test"
-#define DEVICE_SECRET           "zcBZ5TB9cfAylUGo1flH0o47PxS8Mqu2"
+#define PRODUCT_KEY "BfKxBDSjWCH"
+#define DEVICE_NAME "aos_mqtt_test"
+#define DEVICE_SECRET "zcBZ5TB9cfAylUGo1flH0o47PxS8Mqu2"
 
 // TODO move these two buffer into context
 static char *msg_buf = NULL, *msg_readbuf = NULL;
 
-static void release_buff() {
-    if (NULL != msg_buf) {
+static void release_buff()
+{
+    if (NULL != msg_buf)
+    {
         aos_free(msg_buf);
     }
 
-    if (NULL != msg_readbuf) {
+    if (NULL != msg_readbuf)
+    {
         aos_free(msg_readbuf);
     }
 }
@@ -32,78 +35,82 @@ static void eventHandleMqtt(void *pcontext, void *pclient, iotx_mqtt_event_msg_p
     uintptr_t packet_id = (uintptr_t)msg->msg;
     iotx_mqtt_topic_info_pt topic_info = (iotx_mqtt_topic_info_pt)msg->msg;
 
-    switch (msg->event_type) {
-        case IOTX_MQTT_EVENT_UNDEF:
-            LOG("undefined event occur.");
-            break;
+    switch (msg->event_type)
+    {
+    case IOTX_MQTT_EVENT_UNDEF:
+        LOG("undefined event occur.");
+        break;
 
-        case IOTX_MQTT_EVENT_DISCONNECT:
-            LOG("MQTT disconnect.");
-            aos_post_event(EV_MQTT_DISCONNETED, 0, 0);
-            break;
+    case IOTX_MQTT_EVENT_DISCONNECT:
+        LOG("MQTT disconnect.");
+        aos_post_event(EV_MQTT_DISCONNETED, 0, 0);
+        break;
 
-        case IOTX_MQTT_EVENT_RECONNECT:
-            LOG("MQTT reconnect.");
-            aos_post_event(EV_MQTT_CONNETED, 0, 0);
-            break;
+    case IOTX_MQTT_EVENT_RECONNECT:
+        LOG("MQTT reconnect.");
+        aos_post_event(EV_MQTT_CONNETED, 0, 0);
+        break;
 
-        case IOTX_MQTT_EVENT_SUBCRIBE_SUCCESS:
-            LOG("subscribe success, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_SUBCRIBE_SUCCESS:
+        LOG("subscribe success, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_SUBCRIBE_TIMEOUT:
-            LOG("subscribe wait ack timeout, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_SUBCRIBE_TIMEOUT:
+        LOG("subscribe wait ack timeout, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_SUBCRIBE_NACK:
-            LOG("subscribe nack, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_SUBCRIBE_NACK:
+        LOG("subscribe nack, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_UNSUBCRIBE_SUCCESS:
-            LOG("unsubscribe success, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_UNSUBCRIBE_SUCCESS:
+        LOG("unsubscribe success, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_UNSUBCRIBE_TIMEOUT:
-            LOG("unsubscribe timeout, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_UNSUBCRIBE_TIMEOUT:
+        LOG("unsubscribe timeout, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_UNSUBCRIBE_NACK:
-            LOG("unsubscribe nack, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_UNSUBCRIBE_NACK:
+        LOG("unsubscribe nack, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_PUBLISH_SUCCESS:
-            LOG("publish success, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_PUBLISH_SUCCESS:
+        LOG("publish success, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_PUBLISH_TIMEOUT:
-            LOG("publish timeout, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_PUBLISH_TIMEOUT:
+        LOG("publish timeout, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_PUBLISH_NACK:
-            LOG("publish nack, packet-id=%u", (unsigned int)packet_id);
-            break;
+    case IOTX_MQTT_EVENT_PUBLISH_NACK:
+        LOG("publish nack, packet-id=%u", (unsigned int)packet_id);
+        break;
 
-        case IOTX_MQTT_EVENT_PUBLISH_RECVEIVED:
-            LOG("topic message arrived but without any related handle: topic=%.*s, topic_msg=%.*s",
-                          topic_info->topic_len,
-                          topic_info->ptopic,
-                          topic_info->payload_len,
-                          topic_info->payload);
-            break;
+    case IOTX_MQTT_EVENT_PUBLISH_RECVEIVED:
+        LOG("topic message arrived but without any related handle: topic=%.*s, topic_msg=%.*s",
+            topic_info->topic_len,
+            topic_info->ptopic,
+            topic_info->payload_len,
+            topic_info->payload);
+        break;
 
-        default:
-            LOG("Should NOT arrive here.");
-            break;
+    default:
+        LOG("Should NOT arrive here.");
+        break;
     }
 }
 
-static void mqtt_service_event(input_event_t *event, void *priv_data) {
+static void mqtt_service_event(input_event_t *event, void *priv_data)
+{
     LOG("wifi_service_event!");
-    if (event->type != EV_SYS) {
+    if (event->type != EV_SYS)
+    {
         return;
     }
 
-    if (event->code != CODE_SYS_ON_MQTT_READ) {
+    if (event->code != CODE_SYS_ON_MQTT_READ)
+    {
         return;
     }
     LOG("EV_MQTT_CONNETED received");
@@ -116,18 +123,21 @@ static int createMqttClient(void *arg)
     iotx_conn_info_pt pconn_info;
     iotx_mqtt_param_t mqtt_params;
 
-    if (msg_buf != NULL) {
+    if (msg_buf != NULL)
+    {
         return rc;
     }
 
-    if (NULL == (msg_buf = (char *)aos_malloc(MSG_LEN_MAX))) {
+    if (NULL == (msg_buf = (char *)aos_malloc(MSG_LEN_MAX)))
+    {
         LOG("not enough memory");
         rc = -1;
         release_buff();
         return rc;
     }
 
-    if (NULL == (msg_readbuf = (char *)aos_malloc(MSG_LEN_MAX))) {
+    if (NULL == (msg_readbuf = (char *)aos_malloc(MSG_LEN_MAX)))
+    {
         LOG("not enough memory");
         rc = -1;
         release_buff();
@@ -136,7 +146,8 @@ static int createMqttClient(void *arg)
 
     // TODO mistery code!
     /* Device AUTH */
-    if (0 != IOT_SetupConnInfo(PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, (void **)&pconn_info)) {
+    if (0 != IOT_SetupConnInfo(PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, (void **)&pconn_info))
+    {
         // EXAMPLE_TRACE("AUTH request failed!");
         rc = -1;
         release_buff();
@@ -166,33 +177,43 @@ static int createMqttClient(void *arg)
     mqtt_params.handle_event.pcontext = arg;
     /* Construct a MQTT client with specify parameter */
     void *gpclient = IOT_MQTT_Construct(&mqtt_params);
-    if (NULL == gpclient) {
+    if (NULL == gpclient)
+    {
         LOG("MQTT construct failed");
         rc = -1;
         release_buff();
-    } else {
+    }
+    else
+    {
         transport->client = gpclient;
         LOG("MQTT construct success");
-        aos_register_event_filter(EV_SYS,  mqtt_service_event, arg);
+        aos_register_event_filter(EV_SYS, mqtt_service_event, arg);
     }
     return rc;
 }
 
-static void wifiServiceEvent(input_event_t *event, void *priv_data) {
+static void wifiServiceEvent(input_event_t *event, void *priv_data)
+{
     LOG("wifi_service_event with type:%d and code:%d", event->type, event->code);
-    if (event->type != EV_WIFI) {
+    if (event->type != EV_WIFI)
+    {
         return;
     }
 
-    if (event->code != CODE_WIFI_ON_GOT_IP) {
+    if (event->code != CODE_WIFI_ON_GOT_IP)
+    {
         return;
     }
     TRANSPORT *transport = priv_data;
 
-    if (NULL == transport->client) {
-        if (createMqttClient(priv_data) == 0) {
+    if (NULL == transport->client)
+    {
+        if (createMqttClient(priv_data) == 0)
+        {
             LOG("MQTT client created");
-        } else {
+        }
+        else
+        {
             LOG("Failed to create MQTT client");
             // TODO reconnect
         }
@@ -202,33 +223,46 @@ static void wifiServiceEvent(input_event_t *event, void *priv_data) {
 static void subscibedMessageArrive(void *pcontext, void *pclient, iotx_mqtt_event_msg_pt msg)
 {
     LINK *link = pcontext;
-    iotx_mqtt_topic_info_pt ptopic_info = (iotx_mqtt_topic_info_pt) msg->msg;
+    iotx_mqtt_topic_info_pt ptopic_info = (iotx_mqtt_topic_info_pt)msg->msg;
     LOG("Topic:%s Payload:%s",
-                  ptopic_info->ptopic,
-                  ptopic_info->payload);
-    if (!link->running) {
+        ptopic_info->ptopic,
+        ptopic_info->payload);
+    if (!link->running)
+    {
+        LOG("IOT_MQTT_Unsubscribe");
         IOT_MQTT_Unsubscribe(pclient, jsonStr(link->sourceConfig, "topic"));
         return;
     }
-    // cJSON *payload = cJSON_CreateObject();
-    // cJSON_AddItemToObject(payload, "source", cJSON_CreateString("mqtt"));
-    // cJSON_AddItemToObject(payload, "type", cJSON_CreateString("string"));
-    // cJSON_AddItemToObject(payload, "payload", cJSON_CreateString(ptopic_info->payload));
-    // link->payload = payload;
-    IOTLINK_MESSAGE *message = aos_malloc(sizeof(IOTLINK_MESSAGE));
-    message->source = MESSAGE_SOURCE_MQTT;
-    message->type = MESSAGE_TYPE_STRING;
-    message->payload = "It's dummy message";
-    link->message = (void*)(ptopic_info->payload);
-    aos_post_delayed_action(0, link->writeFunc, link);
+    // int len = strlen(ptopic_info->payload);
+    // char *payload = aos_malloc(sizeof(char) * len);
+    // strncpy(payload, ptopic_info->payload, len);
+    cJSON *json = cJSON_Parse(ptopic_info->payload);
+    link->message.source = MESSAGE_SOURCE_MQTT;
+    link->message.type = jsonInt(json, "type");
+    if (link->message.type == MESSAGE_TYPE_BOOLEAN)
+    {
+        bool *bp = aos_malloc(sizeof(bool));
+        *bp = jsonInt(json, "payload");
+        link->message.payload = (void *)bp;
+        aos_schedule_call(link->writeFunc, pcontext);
+        LOG("dispatch received mqtt message");
+    }
+    else
+    {
+        LOG("Invalid type");
+    }
+    cJSON_Delete(json);
 }
 
 void sourceMqtt(void *arg)
 {
     LINK *link = arg;
-    if (NULL == (link->transport->client)) {
+    if (NULL == (link->transport->client))
+    {
         LOG("Not ready to read from MQTT source");
-    } else {
+    }
+    else
+    {
         IOT_MQTT_Subscribe(link->transport->client, jsonStr(link->sourceConfig, "topic"), IOTX_MQTT_QOS1, subscibedMessageArrive, link);
     }
 }
@@ -236,7 +270,7 @@ void sourceMqtt(void *arg)
 static void publishMqttMessage(void *arg)
 {
     LINK *link = arg;
-    char *msg = IOTLINK_PRINT_MESSAGE(link->message);
+    char *msg = IOTLINK_PRINT_MESSAGE(&(link->message));
     iotx_mqtt_topic_info_t topic_msg;
     memset(&topic_msg, 0x0, sizeof(topic_msg));
     topic_msg.qos = IOTX_MQTT_QOS0;
@@ -246,27 +280,32 @@ static void publishMqttMessage(void *arg)
     topic_msg.payload_len = strlen(msg);
     char *topic = jsonStr(link->targetConfig, "topic");
     int rc = IOT_MQTT_Publish(link->transport->client, topic, &topic_msg);
-    if (rc < 0) {
+    if (rc < 0)
+    {
         LOG("Failed to publish mqtt message:%s to topic: %s with return code:%d", msg, topic, rc);
-    } else {
+    }
+    else
+    {
         LOG("Published mqtt message:%s to topic: %s", msg, topic);
     }
     aos_free(msg);
-    IOTLINK_FREE_MESSAGE(link->message);
-    link->message = NULL;
+    IOTLINK_FREE_MESSAGE(&(link->message));
 }
 
 void targetMqtt(void *arg)
 {
-    LINK* link = arg;
-    if (NULL == link->transport->client) {
+    LINK *link = arg;
+    if (NULL == link->transport->client)
+    {
         LOG("Not ready to write to MQTT target");
-    } else {
+    }
+    else
+    {
         publishMqttMessage(link);
     }
 }
 
-TRANSPORT* createMqttTransport(cJSON *config)
+TRANSPORT *createMqttTransport(cJSON *config)
 {
     TRANSPORT *transport = aos_zalloc(sizeof(TRANSPORT));
     transport->config = config;

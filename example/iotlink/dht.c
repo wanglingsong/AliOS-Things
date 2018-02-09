@@ -1,10 +1,10 @@
-#include <stdio.h>
 #include <aos/aos.h>
-#include <hal/soc/soc.h>
 #include <cJSON.h>
 #include <types.h>
 #include <util.h>
 #include <drivers/dht11.h>
+
+#define DHT11_MAX_RETRY 10
 
 void sourceDHT11(void *arg)
 {
@@ -14,29 +14,32 @@ void sourceDHT11(void *arg)
         return;
     }
 
-    int port = jsonInt(link->sourceConfig, "port");
-
     DHT11 dht;
-    if (dht11_read(&dht, port))
-    {
-        int strSize = sizeof(char) * 64;
-        char *msgStr = aos_zalloc(strSize);
-        // TODO in JSON format
-        snprintf(msgStr, strSize, "{\"temperature\":%d,\"humidity\":%d}", dht.temperature, dht.humidity);
+    uint8_t port = jsonInt(link->sourceConfig, "port");
 
-        IOTLINK_MESSAGE *message = aos_malloc(sizeof(IOTLINK_MESSAGE));
-        message->source = MESSAGE_SOURCE_DHT11;
-        message->type = MESSAGE_TYPE_STRING;
-        message->payload = msgStr;
-        link->message = message;
-        aos_post_delayed_action(0, link->writeFunc, arg);
-    }
-    else
+    int retry = 0;
+    while (retry < DHT11_MAX_RETRY)
     {
-        LOG("Failed to read dht11 value");
+        int32_t ret = dht11_read(&dht, port);
+        if (ret == 0)
+        {
+            cJSON *payload = cJSON_CreateObject();
+            cJSON_AddNumberToObject(payload, "temperature", dht.temperature);
+            cJSON_AddNumberToObject(payload, "humidity", dht.humidity);
+            link->message.source = MESSAGE_SOURCE_DHT11;
+            link->message.type = MESSAGE_TYPE_JSON;
+            link->message.payload = payload;
+            aos_schedule_call(link->writeFunc, arg);
+            break;
+        }
+        else
+        {
+            LOG("Failed to read dht11 value with error code: %d and retry: %d", ret, retry);
+            retry++;
+        }
     }
 
-    int interval = jsonInt(link->sourceConfig, "interval");
+    int32_t interval = jsonInt(link->sourceConfig, "interval");
     if (interval > 0)
     {
         aos_post_delayed_action(interval, sourceDHT11, arg);

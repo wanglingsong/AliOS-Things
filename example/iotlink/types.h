@@ -1,17 +1,15 @@
-#define  EV_MQTT_CONNETED                  0x1001
-#define  EV_MQTT_DISCONNETED               0x1002
-#define  EV_LINK_UPDATED                   0x1003
+#define EV_MQTT_CONNETED 0x1001
+#define EV_MQTT_DISCONNETED 0x1002
+#define EV_LINK_UPDATED 0x1003
 
-typedef enum
-{
+typedef enum {
     MESSAGE_SOURCE_DUMMY = 0,
     MESSAGE_SOURCE_GPIO_TRIGGER,
     MESSAGE_SOURCE_DHT11,
     MESSAGE_SOURCE_MQTT
 } MESSAGE_SOURCE;
 
-typedef enum
-{
+typedef enum {
     MESSAGE_TYPE_BOOLEAN = 0,
     MESSAGE_TYPE_NUMBER,
     MESSAGE_TYPE_STRING,
@@ -25,7 +23,7 @@ typedef struct IOTLINK_MESSAGE
     void *payload;
 } IOTLINK_MESSAGE;
 
-typedef void (*FUNC)(void*);
+typedef void (*FUNC)(void *);
 
 typedef struct TRANSPORT
 {
@@ -39,7 +37,7 @@ typedef struct LINK
     FUNC readFunc;
     cJSON *targetConfig;
     FUNC writeFunc;
-    IOTLINK_MESSAGE *message;
+    IOTLINK_MESSAGE message;
     TRANSPORT *transport;
     bool running;
 } LINK;

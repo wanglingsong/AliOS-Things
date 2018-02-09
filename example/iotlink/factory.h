@@ -1,3 +1,5 @@
-LINK* createLink(cJSON *config);
+LINK *createLink(cJSON *config);
 
-TRANSPORT* createTransports(cJSON *config);
+void setupLink(LINK *link);
+
+TRANSPORT *createTransports(cJSON *config);

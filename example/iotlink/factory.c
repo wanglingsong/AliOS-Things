@@ -38,16 +38,19 @@ static void createSource(LINK *link, cJSON *config)
     if (strcmp(type, "dummy") == 0)
     {
         link->readFunc = sourceDummy;
+        LOG("Post dummy source set");
         aos_post_event(EV_LINK_UPDATED, 0, 0);
     }
     else if (strcmp(type, "irq") == 0)
     {
         link->readFunc = sourceGpioTrigger;
+        LOG("Post irq source set");
         aos_post_event(EV_LINK_UPDATED, 0, 0);
     }
     else if (strcmp(type, "dht11") == 0)
     {
         link->readFunc = sourceDHT11;
+        LOG("Post dht11 source set");
         aos_post_event(EV_LINK_UPDATED, 0, 0);
 
 #if defined(IOT_LINK_MQTT)
@@ -69,6 +72,13 @@ static void createTarget(LINK *link, cJSON *config)
     if (strcmp(type, "dummy") == 0)
     {
         link->writeFunc = targetDummy;
+        LOG("Post dummy target set");
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
+    }
+    else if (strcmp(type, "gpio") == 0)
+    {
+        link->writeFunc = targetGpio;
+        LOG("Post gpio target set");
         aos_post_event(EV_LINK_UPDATED, 0, 0);
 
 #if defined(IOT_LINK_MQTT)
@@ -89,13 +99,15 @@ LINK *createLink(cJSON *config)
 {
     LINK *link = aos_zalloc(sizeof(LINK));
     link->running = false;
-    cJSON *sourceConfig = jsonObj(config, "source");
-    link->sourceConfig = sourceConfig;
-    cJSON *targetConfig = jsonObj(config, "target");
-    link->targetConfig = targetConfig;
-    createSource(link, sourceConfig);
-    createTarget(link, targetConfig);
+    link->sourceConfig = jsonObj(config, "source");
+    link->targetConfig = jsonObj(config, "target");
     return link;
+}
+
+void setupLink(LINK *link)
+{
+    createSource(link, link->sourceConfig);
+    createTarget(link, link->targetConfig);
 }
 
 TRANSPORT *createTransports(cJSON *config)

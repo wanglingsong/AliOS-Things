@@ -33,7 +33,7 @@ int32_t hal_gpio_init(aos_gpio_dev_t *gpio)
     /* set mode */
     if (gpio->config == OUTPUT_PUSH_PULL)
     {
-        io_conf.mode = GPIO_MODE_OUTPUT;
+        return gpio_set_direction(gpio->port, GPIO_MODE_OUTPUT);
     }
     else if ((gpio->config == OUTPUT_OPEN_DRAIN_NO_PULL) ||
              (gpio->config == OUTPUT_OPEN_DRAIN_PULL_UP))

@@ -1,42 +1,64 @@
 #include <aos/aos.h>
-#include <hal/soc/soc.h>
+#include <hal/soc/gpio.h>
 #include <cJSON.h>
 #include <types.h>
 #include <util.h>
 
 static void gpioTriggerHandler(void *arg)
 {
-    void** args = arg;
-    gpio_dev_t *gpio = args[0];
-    LINK *link = args[1];
-    uint32_t value = 0;
-    hal_gpio_input_get(gpio, &value);
-    IOTLINK_MESSAGE *message = aos_malloc(sizeof(IOTLINK_MESSAGE));
-    message->source = MESSAGE_SOURCE_GPIO_TRIGGER;
-    message->type = MESSAGE_TYPE_BOOLEAN;
+    // LOG("Begin gpioTriggerHandler");
+    LINK *link = arg;
+    int port = jsonInt(link->sourceConfig, "port");
+    gpio_dev_t gpio;
+    gpio.port = port;
+    uint32_t value;
     bool *bp = aos_malloc(sizeof(bool));
+
+    hal_gpio_input_get(&gpio, &value);
+    // LOG("Got irq value: %d", value);
+    link->message.source = MESSAGE_SOURCE_GPIO_TRIGGER;
+    link->message.type = MESSAGE_TYPE_BOOLEAN;
     *bp = value;
-    message->payload = bp;
-    link->message = message;
-    aos_post_delayed_action(0, link->writeFunc, link);
+    link->message.payload = bp;
+    aos_schedule_call(link->writeFunc, arg);
+    // LOG("End gpioTriggerHandler");
 }
 
 void sourceGpioTrigger(void *arg)
 {
-    void** args = aos_malloc(sizeof(gpio_dev_t*) + sizeof(LINK*));
-    gpio_dev_t *gpio;
-    LINK* link = arg;
-    gpio = aos_zalloc(sizeof(gpio_dev_t));
+    LINK *link = arg;
     int port = jsonInt(link->sourceConfig, "port");
-    gpio->port = port;
-    gpio->config = IRQ_MODE;
-    hal_gpio_init(gpio);
-    args[0] = gpio;
-    args[1] = link;
-    hal_gpio_enable_irq(gpio, IRQ_TRIGGER_BOTH_EDGES, gpioTriggerHandler, args);
+    gpio_dev_t gpio;
+    gpio.port = port;
+    gpio.config = IRQ_MODE;
+    hal_gpio_init(&gpio);
+    hal_gpio_enable_irq(&gpio, IRQ_TRIGGER_BOTH_EDGES, gpioTriggerHandler, arg);
 }
 
 void targetGpio(void *arg)
 {
-    // TODO
+    // LOG("targetGpio start");
+    LINK *link = arg;
+    int port = jsonInt(link->targetConfig, "port");
+    gpio_dev_t gpio;
+    gpio.port = port;
+    gpio.config = OUTPUT_PUSH_PULL;
+    hal_gpio_init(&gpio);
+    if (link->message.type == MESSAGE_TYPE_BOOLEAN)
+    {
+        if (*((bool *)link->message.payload))
+        {
+            hal_gpio_output_high(&gpio);
+        }
+        else
+        {
+            hal_gpio_output_low(&gpio);
+        }
+    }
+    else
+    {
+        LOG("Invalid type %d", link->message.type);
+    }
+    IOTLINK_FREE_MESSAGE(&(link->message));
+    // LOG("targetGpio end");
 }
