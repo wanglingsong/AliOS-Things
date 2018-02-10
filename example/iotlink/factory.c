@@ -4,12 +4,12 @@
 #include <cJSON.h>
 #include <types.h>
 #include <util.h>
-#include <dummy.h>
-#include <gpio.h>
-#include <dht.h>
+#include <modules/dummy.h>
+#include <modules/gpio.h>
+#include <modules/dht.h>
 
 #if defined(IOT_LINK_MQTT)
-#include <mqtt.h>
+#include <modules/mqtt.h>
 #endif
 
 #if defined(IOT_LINK_MQTT)

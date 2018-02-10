@@ -28,7 +28,7 @@ typedef void (*FUNC)(void *);
 typedef struct TRANSPORT
 {
     cJSON *config;
-    void *client;
+    void *context;
 } TRANSPORT;
 
 typedef struct LINK

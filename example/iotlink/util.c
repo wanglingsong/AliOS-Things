@@ -1,4 +1,4 @@
-#include <stdio.h>
+// #include <stdio.h>
 #include <aos/aos.h>
 #include <cJSON.h>
 #include <types.h>
@@ -21,15 +21,18 @@ int jsonInt(cJSON *json, char *key)
 void IOTLINK_FREE_MESSAGE(IOTLINK_MESSAGE *message)
 {
     // LOG("Try to free message");
-    if (message->type == MESSAGE_TYPE_JSON)
+    if (message->payload != NULL)
     {
-        cJSON_Delete(message->payload);
+        if (message->type == MESSAGE_TYPE_JSON)
+        {
+            cJSON_Delete(message->payload);
+        }
+        else
+        {
+            aos_free(message->payload);
+        }
+        message->payload = NULL;
     }
-    else
-    {
-        aos_free(message->payload);
-    }
-    message->payload = NULL;
     // aos_free(message);
     // LOG("Free message success");
 }

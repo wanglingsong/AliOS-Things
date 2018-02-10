@@ -2,7 +2,7 @@
 #include <cJSON.h>
 #include <types.h>
 #include <util.h>
-#include <drivers/dht11.h>
+#include <sensors/dht11.h>
 
 #define DHT11_MAX_RETRY 10
 

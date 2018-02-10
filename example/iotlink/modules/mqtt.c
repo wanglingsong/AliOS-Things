@@ -1,12 +1,13 @@
 #include <string.h>
 #include <aos/aos.h>
-#include <netmgr.h>
+// #include <netmgr.h>
 #include "iot_import.h"
 #include "iot_export.h"
 #include <cJSON.h>
 #include <types.h>
 #include <util.h>
-// #include "device.h"
+#include <msg_adaptor.h>
+// #include <mqtt.h>
 
 #define MSG_LEN_MAX (2048)
 
@@ -14,19 +15,18 @@
 #define DEVICE_NAME "aos_mqtt_test"
 #define DEVICE_SECRET "zcBZ5TB9cfAylUGo1flH0o47PxS8Mqu2"
 
-// TODO move these two buffer into context
-static char *msg_buf = NULL, *msg_readbuf = NULL;
-
-static void release_buff()
+typedef struct MQTT_CLIENT_CONTEXT
 {
-    if (NULL != msg_buf)
-    {
-        aos_free(msg_buf);
-    }
+    void *client;
+    char *msg_buf;
+    char *msg_readbuf;
+} MQTT_CLIENT_CONTEXT;
 
-    if (NULL != msg_readbuf)
+static void release_buff(char *buff)
+{
+    if (NULL != buff)
     {
-        aos_free(msg_readbuf);
+        aos_free(buff);
     }
 }
 
@@ -119,11 +119,14 @@ static void mqtt_service_event(input_event_t *event, void *priv_data)
 
 static int createMqttClient(void *arg)
 {
-    int rc = 0;
+    int rc = -1;
+    TRANSPORT *transport = arg;
     iotx_conn_info_pt pconn_info;
     iotx_mqtt_param_t mqtt_params;
+    char *msg_buf;
+    char *msg_readbuf;
 
-    if (msg_buf != NULL)
+    if (transport->context != NULL)
     {
         return rc;
     }
@@ -132,7 +135,7 @@ static int createMqttClient(void *arg)
     {
         LOG("not enough memory");
         rc = -1;
-        release_buff();
+        release_buff(msg_buf);
         return rc;
     }
 
@@ -140,7 +143,7 @@ static int createMqttClient(void *arg)
     {
         LOG("not enough memory");
         rc = -1;
-        release_buff();
+        release_buff(msg_readbuf);
         return rc;
     }
 
@@ -149,15 +152,16 @@ static int createMqttClient(void *arg)
     if (0 != IOT_SetupConnInfo(PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, (void **)&pconn_info))
     {
         // EXAMPLE_TRACE("AUTH request failed!");
-        rc = -1;
-        release_buff();
+        // rc = -1;
+        // release_buff();
+        release_buff(msg_buf);
+        release_buff(msg_readbuf);
         return rc;
     }
 
     /* Initialize MQTT parameter */
     memset(&mqtt_params, 0x0, sizeof(mqtt_params));
 
-    TRANSPORT *transport = arg;
     mqtt_params.port = jsonInt(transport->config, "port");
     mqtt_params.host = jsonStr(transport->config, "host");
     mqtt_params.client_id = jsonStr(transport->config, "clientId");
@@ -181,15 +185,21 @@ static int createMqttClient(void *arg)
     {
         LOG("MQTT construct failed");
         rc = -1;
-        release_buff();
+        release_buff(msg_buf);
+        release_buff(msg_readbuf);
     }
     else
     {
-        transport->client = gpclient;
+        MQTT_CLIENT_CONTEXT *context = aos_malloc(sizeof(MQTT_CLIENT_CONTEXT));
+        context->client = gpclient;
+        context->msg_buf = msg_buf;
+        context->msg_readbuf = msg_readbuf;
+        transport->context = context;
+
         LOG("MQTT construct success");
         aos_register_event_filter(EV_SYS, mqtt_service_event, arg);
     }
-    return rc;
+    return 0;
 }
 
 static void wifiServiceEvent(input_event_t *event, void *priv_data)
@@ -204,20 +214,20 @@ static void wifiServiceEvent(input_event_t *event, void *priv_data)
     {
         return;
     }
-    TRANSPORT *transport = priv_data;
+    // TRANSPORT *transport = priv_data;
 
-    if (NULL == transport->client)
+    // if (NULL == transport->context)
+    // {
+    if (createMqttClient(priv_data) == 0)
     {
-        if (createMqttClient(priv_data) == 0)
-        {
-            LOG("MQTT client created");
-        }
-        else
-        {
-            LOG("Failed to create MQTT client");
-            // TODO reconnect
-        }
+        LOG("MQTT client created");
     }
+    else
+    {
+        LOG("Failed to create MQTT client");
+        // TODO reconnect
+    }
+    // }
 }
 
 static void subscibedMessageArrive(void *pcontext, void *pclient, iotx_mqtt_event_msg_pt msg)
@@ -233,44 +243,30 @@ static void subscibedMessageArrive(void *pcontext, void *pclient, iotx_mqtt_even
         IOT_MQTT_Unsubscribe(pclient, jsonStr(link->sourceConfig, "topic"));
         return;
     }
-    // int len = strlen(ptopic_info->payload);
-    // char *payload = aos_malloc(sizeof(char) * len);
-    // strncpy(payload, ptopic_info->payload, len);
-    cJSON *json = cJSON_Parse(ptopic_info->payload);
-    link->message.source = MESSAGE_SOURCE_MQTT;
-    link->message.type = jsonInt(json, "type");
-    if (link->message.type == MESSAGE_TYPE_BOOLEAN)
+    if (decode_iotlink_message(&(link->message), ptopic_info->payload) == 0)
     {
-        bool *bp = aos_malloc(sizeof(bool));
-        *bp = jsonInt(json, "payload");
-        link->message.payload = (void *)bp;
         aos_schedule_call(link->writeFunc, pcontext);
         LOG("dispatch received mqtt message");
     }
-    else
-    {
-        LOG("Invalid type");
-    }
-    cJSON_Delete(json);
 }
 
 void sourceMqtt(void *arg)
 {
     LINK *link = arg;
-    if (NULL == (link->transport->client))
+    if (NULL == (((MQTT_CLIENT_CONTEXT *)link->transport->context)->client))
     {
         LOG("Not ready to read from MQTT source");
     }
     else
     {
-        IOT_MQTT_Subscribe(link->transport->client, jsonStr(link->sourceConfig, "topic"), IOTX_MQTT_QOS1, subscibedMessageArrive, link);
+        IOT_MQTT_Subscribe(((MQTT_CLIENT_CONTEXT *)link->transport->context)->client, jsonStr(link->sourceConfig, "topic"), IOTX_MQTT_QOS1, subscibedMessageArrive, link);
     }
 }
 
 static void publishMqttMessage(void *arg)
 {
     LINK *link = arg;
-    char *msg = IOTLINK_PRINT_MESSAGE(&(link->message));
+    char *msg = encode_iotlink_message(&(link->message));
     iotx_mqtt_topic_info_t topic_msg;
     memset(&topic_msg, 0x0, sizeof(topic_msg));
     topic_msg.qos = IOTX_MQTT_QOS0;
@@ -279,7 +275,7 @@ static void publishMqttMessage(void *arg)
     topic_msg.payload = (void *)(msg);
     topic_msg.payload_len = strlen(msg);
     char *topic = jsonStr(link->targetConfig, "topic");
-    int rc = IOT_MQTT_Publish(link->transport->client, topic, &topic_msg);
+    int rc = IOT_MQTT_Publish(((MQTT_CLIENT_CONTEXT *)link->transport->context)->client, topic, &topic_msg);
     if (rc < 0)
     {
         LOG("Failed to publish mqtt message:%s to topic: %s with return code:%d", msg, topic, rc);
@@ -295,7 +291,7 @@ static void publishMqttMessage(void *arg)
 void targetMqtt(void *arg)
 {
     LINK *link = arg;
-    if (NULL == link->transport->client)
+    if (NULL == ((MQTT_CLIENT_CONTEXT *)link->transport->context)->client)
     {
         LOG("Not ready to write to MQTT target");
     }
