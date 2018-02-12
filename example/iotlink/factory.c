@@ -7,6 +7,7 @@
 #include <modules/dummy.h>
 #include <modules/gpio.h>
 #include <modules/dht.h>
+#include <modules/ir.h>
 
 #if defined(IOT_LINK_MQTT)
 #include <modules/mqtt.h>
@@ -52,6 +53,12 @@ static void createSource(LINK *link, cJSON *config)
         link->readFunc = sourceDHT11;
         LOG("Post dht11 source set");
         aos_post_event(EV_LINK_UPDATED, 0, 0);
+    }
+    else if (strcmp(type, "ir") == 0)
+    {
+        link->readFunc = sourceIR;
+        LOG("Post IR source set");
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
 
 #if defined(IOT_LINK_MQTT)
     }
@@ -79,6 +86,12 @@ static void createTarget(LINK *link, cJSON *config)
     {
         link->writeFunc = targetGpio;
         LOG("Post gpio target set");
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
+    }
+    else if (strcmp(type, "ir") == 0)
+    {
+        link->writeFunc = targetIR;
+        LOG("Post ir target set");
         aos_post_event(EV_LINK_UPDATED, 0, 0);
 
 #if defined(IOT_LINK_MQTT)
