@@ -1,6 +1,6 @@
 #include <string.h>
 #include <aos/aos.h>
-#include <hal/soc/soc.h>
+// #include <hal/soc/soc.h>
 #include <cJSON.h>
 #include <types.h>
 #include <util.h>

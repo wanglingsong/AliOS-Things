@@ -19,6 +19,7 @@ void targetCli(void *arg)
         }
         else if (strcmp(cmd, "update-config") == 0)
         {
+            // TODO
             char *config = jsonStr(json, "config");
             aos_kv_set("iotlink_config", config, strlen(config), 1);
             LOG("Saved config to KV from cli target: %s", config);

@@ -20,6 +20,11 @@ int8_t decode_iotlink_message(IOTLINK_MESSAGE *message, const char *str)
         *bp = jsonInt(json, "payload");
         message->payload = (void *)bp;
     }
+    if (message->type == MESSAGE_TYPE_JSON)
+    {
+        cJSON *duplicate = cJSON_Duplicate(jsonObj(json, "payload"), true);
+        message->payload = (void *)duplicate;
+    }
     else
     {
         LOG("Invalid type");
