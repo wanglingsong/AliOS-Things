@@ -1,5 +1,8 @@
 #include <aos/aos.h>
 #include "driver/rmt.h"
+
+#include <hal/soc/pwm.h>
+
 #include <cJSON.h>
 #include <types.h>
 #include <util.h>
@@ -9,12 +12,11 @@
 #define RMT_TX_CHANNEL RMT_CHANNEL_0
 #define RMT_TX_GPIO 16
 
-#define RMT_RX_CHANNEL   RMT_CHANNEL_0      /*!< RMT channel for receiver */
-#define RMT_RX_GPIO_NUM  17     /*!< GPIO number for receiver */
-#define RMT_CLK_DIV      100
-#define RMT_TICK_10_US    (80000000/RMT_CLK_DIV/100000)   /*!< RMT counter value for 10 us.(Source clock is APB clock) */
-#define rmt_item32_tIMEOUT_US  9500   /*!< RMT receiver timeout value(us) */
-
+#define RMT_RX_CHANNEL RMT_CHANNEL_0 /*!< RMT channel for receiver */
+#define RMT_RX_GPIO_NUM 17           /*!< GPIO number for receiver */
+#define RMT_CLK_DIV 100
+#define RMT_TICK_10_US (80000000 / RMT_CLK_DIV / 100000) /*!< RMT counter value for 10 us.(Source clock is APB clock) */
+#define rmt_item32_tIMEOUT_US 9500                       /*!< RMT receiver timeout value(us) */
 
 /*
  * Prepare a raw table with a message in the Morse code
@@ -27,26 +29,25 @@
  */
 rmt_item32_t items[] = {
     // E : dot
-    {{{ 32767, 1, 32767, 0 }}}, // dot
+    {{{32767, 1, 32767, 0}}}, // dot
     //
-    {{{ 32767, 0, 32767, 0 }}}, // SPACE
+    {{{32767, 0, 32767, 0}}}, // SPACE
     // S : dot, dot, dot
-    {{{ 32767, 1, 32767, 0 }}}, // dot
-    {{{ 32767, 1, 32767, 0 }}}, // dot
-    {{{ 32767, 1, 32767, 0 }}}, // dot
+    {{{32767, 1, 32767, 0}}}, // dot
+    {{{32767, 1, 32767, 0}}}, // dot
+    {{{32767, 1, 32767, 0}}}, // dot
     //
-    {{{ 32767, 0, 32767, 0 }}}, // SPACE
+    {{{32767, 0, 32767, 0}}}, // SPACE
     // P : dot, dash, dash, dot
-    {{{ 32767, 1, 32767, 0 }}}, // dot
-    {{{ 32767, 1, 32767, 1 }}},
-    {{{ 32767, 1, 32767, 0 }}}, // dash
-    {{{ 32767, 1, 32767, 1 }}},
-    {{{ 32767, 1, 32767, 0 }}}, // dash
-    {{{ 32767, 1, 32767, 0 }}}, // dot
+    {{{32767, 1, 32767, 0}}}, // dot
+    {{{32767, 1, 32767, 1}}},
+    {{{32767, 1, 32767, 0}}}, // dash
+    {{{32767, 1, 32767, 1}}},
+    {{{32767, 1, 32767, 0}}}, // dash
+    {{{32767, 1, 32767, 0}}}, // dot
 
     // RMT end marker
-    {{{ 0, 1, 0, 0 }}}
-};
+    {{{0, 1, 0, 0}}}};
 
 // /*
 //  * @brief Build register value of waveform for NEC one data bit
@@ -81,13 +82,15 @@ void sourceIR(void *arg)
     rmt_get_ringbuf_handle(rmt_rx.channel, &rb);
     rmt_rx_start(rmt_rx.channel, 1);
     uint32_t item_count = 0;
-    while(rb) {
+    while (rb)
+    {
         size_t rx_size = 0;
         //try to receive data from ringbuffer.
         //RMT driver will push all the data it receives to its ringbuffer.
         //We just need to parse the value and return the spaces of ringbuffer.
-        rmt_item32_t* item = (rmt_item32_t*) xRingbufferReceive(rb, &rx_size, 1000);
-        if(item) {
+        rmt_item32_t *item = (rmt_item32_t *)xRingbufferReceive(rb, &rx_size, 1000);
+        if (item)
+        {
             item_count += rx_size;
             // uint16_t rmt_addr;
             // uint16_t rmt_cmd;
@@ -103,8 +106,10 @@ void sourceIR(void *arg)
             //     }
             // }
             //after parsing the data, return spaces to ringbuffer.
-            vRingbufferReturnItem(rb, (void*) item);
-        } else {
+            vRingbufferReturnItem(rb, (void *)item);
+        }
+        else
+        {
             break;
         }
     }
@@ -121,47 +126,62 @@ void sourceIR(void *arg)
     }
 
     LOG("End IR source");
-
 }
 
 void targetIR(void *arg)
 {
+    // LOG("Start targetIR");
+    // LINK *link = arg;
+
+    // rmt_config_t config;
+    // config.rmt_mode = RMT_MODE_TX;
+    // config.channel = RMT_TX_CHANNEL;
+    // config.gpio_num = RMT_TX_GPIO;
+    // config.mem_block_num = 1;
+    // config.tx_config.loop_en = 0;
+    // // enable the carrier to be able to hear the Morse sound
+    // // if the RMT_TX_GPIO is connected to a speaker
+    // config.tx_config.carrier_en = 1;
+    // config.tx_config.idle_output_en = 1;
+    // config.tx_config.idle_level = 0;
+    // config.tx_config.carrier_duty_percent = 50;
+    // // set audible career frequency of 611 Hz
+    // // actually 611 Hz is the minimum, that can be set
+    // // with current implementation of the RMT API
+    // config.tx_config.carrier_freq_hz = 38000;
+    // config.tx_config.carrier_level = 1;
+    // // set the maximum clock divider to be able to output
+    // // RMT pulses in range of about one hundred milliseconds
+    // config.clk_div = 255;
+
+    // rmt_config(&config);
+    // rmt_driver_install(config.channel, 0, 0);
+
+    // int number_of_items = sizeof(items) / sizeof(items[0]);
+
+    // // while (1) {
+    //     rmt_write_items(RMT_TX_CHANNEL, items, number_of_items, true);
+    //     // ESP_LOGI(RMT_TX_TAG, "Transmission complete");
+    //     // vTaskDelay(2000 / portTICK_PERIOD_MS);
+    // // }
+    // rmt_driver_uninstall(config.channel);
+
+    // IOTLINK_FREE_MESSAGE(&(link->message));
+    // LOG("End targetIR");
+
     LOG("Start targetIR");
-    LINK *link = arg;
+    pwm_dev_t pwm;
+    pwm_config_t config;
+    config.duty_cycle = 0.5;
+    config.freq = 38000;
+    pwm.port = 16;
+    pwm.config = config;
 
-    rmt_config_t config;
-    config.rmt_mode = RMT_MODE_TX;
-    config.channel = RMT_TX_CHANNEL;
-    config.gpio_num = RMT_TX_GPIO;
-    config.mem_block_num = 1;
-    config.tx_config.loop_en = 0;
-    // enable the carrier to be able to hear the Morse sound
-    // if the RMT_TX_GPIO is connected to a speaker
-    config.tx_config.carrier_en = 1;
-    config.tx_config.idle_output_en = 1;
-    config.tx_config.idle_level = 0;
-    config.tx_config.carrier_duty_percent = 50;
-    // set audible career frequency of 611 Hz
-    // actually 611 Hz is the minimum, that can be set
-    // with current implementation of the RMT API
-    config.tx_config.carrier_freq_hz = 38000;
-    config.tx_config.carrier_level = 1;
-    // set the maximum clock divider to be able to output
-    // RMT pulses in range of about one hundred milliseconds
-    config.clk_div = 255;
-
-    rmt_config(&config);
-    rmt_driver_install(config.channel, 0, 0);
-
-    int number_of_items = sizeof(items) / sizeof(items[0]);
-
-    // while (1) {
-        rmt_write_items(RMT_TX_CHANNEL, items, number_of_items, true);
-        // ESP_LOGI(RMT_TX_TAG, "Transmission complete");
-        // vTaskDelay(2000 / portTICK_PERIOD_MS);
-    // }
-    rmt_driver_uninstall(config.channel);
-
-    IOTLINK_FREE_MESSAGE(&(link->message));
+    hal_pwm_init(&pwm);
+    hal_pwm_start(&pwm);
+    aos_msleep(100);
+    hal_pwm_stop(&pwm);
+    aos_msleep(100);
+    hal_pwm_finalize(&pwm);
     LOG("End targetIR");
 }

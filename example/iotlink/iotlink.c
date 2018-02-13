@@ -9,6 +9,8 @@
 #include <netmgr.h>
 #endif
 
+#define MAX_CONFIG_FILE_LENGTH 512
+
 static void runLink(input_event_t *event, void *arg)
 {
     LINK *link = arg;
@@ -42,7 +44,21 @@ int application_start(int argc, char *argv[])
     // cJSON *root = cJSON_Parse("{\"links\":[{\"source\":{\"type\":\"irq\",\"port\":15},\"target\":{\"type\":\"dummy\"}},{\"source\":{\"type\":\"dht11\",\"port\":16,\"interval\":30000},\"target\":{\"type\":\"dummy\"}},{\"source\":{\"type\":\"dummy\",\"interval\":30000},\"target\":{\"type\":\"dummy\"}}]}");
     // cJSON *root = cJSON_Parse("{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"irq\",\"port\":15},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"dht11\",\"port\":16,\"interval\":30000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"dummy\",\"interval\":30000},\"target\":{\"type\":\"mqtt\",\"topic\":\"iotlink\"}},{\"source\":{\"type\":\"mqtt\",\"topic\":\"manual_input\"},\"target\":{\"type\":\"gpio\",\"port\":17}}]}");
     // cJSON *root = cJSON_Parse("{\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":30000},\"target\":{\"type\":\"ir\"}}]}");
-    cJSON *root = cJSON_Parse("{\"links\":[{\"source\":{\"type\":\"dummy\",\"interval\":5000},\"target\":{\"type\":\"ir\"}}]}");
+    cJSON *root;
+    // char config_buffer[MAX_CONFIG_FILE_LENGTH];
+    // int length = sizeof(config_buffer);
+    // if (aos_kv_get("iotlink_config", config_buffer, &length) == 0)
+    // {
+    //     LOG("Config loaded from KV: %s", config_buffer);
+    //     root = cJSON_Parse(config_buffer);
+    // }
+    // else
+    // {
+        char json[MAX_CONFIG_FILE_LENGTH] = "{\"wifi\":{\"ssid\":\"Xiaomi_5576\",\"password\":\"w19l86s07\"},\"transport\":{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null},\"links\":[{\"source\":{\"type\":\"mqtt\",\"topic\":\"cli\"},\"target\":{\"type\":\"cli\"}}]}";
+        root = cJSON_Parse(json);
+        // aos_kv_set("iotlink_config", json, sizeof(json), 1);
+        // LOG("Saved config to KV: %s", json);
+    // }
 
     LOG("Parsed config json");
     cJSON *linksConfig = jsonObj(root, "links");

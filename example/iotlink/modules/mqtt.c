@@ -103,7 +103,7 @@ static void eventHandleMqtt(void *pcontext, void *pclient, iotx_mqtt_event_msg_p
 
 static void mqtt_service_event(input_event_t *event, void *priv_data)
 {
-    LOG("wifi_service_event!");
+    LOG("mqtt_service_event!");
     if (event->type != EV_SYS)
     {
         return;
@@ -121,16 +121,18 @@ static int createMqttClient(void *arg)
 {
     int rc = -1;
     TRANSPORT *transport = arg;
-    iotx_conn_info_pt pconn_info;
+    // iotx_conn_info_pt pconn_info;
     iotx_mqtt_param_t mqtt_params;
     char *msg_buf;
     char *msg_readbuf;
 
+    LOG("Checking transport context");
     if (transport->context != NULL)
     {
         return rc;
     }
 
+    LOG("allocate msg buf");
     if (NULL == (msg_buf = (char *)aos_malloc(MSG_LEN_MAX)))
     {
         LOG("not enough memory");
@@ -139,6 +141,7 @@ static int createMqttClient(void *arg)
         return rc;
     }
 
+    LOG("allocate msg readbuf");
     if (NULL == (msg_readbuf = (char *)aos_malloc(MSG_LEN_MAX)))
     {
         LOG("not enough memory");
@@ -147,40 +150,54 @@ static int createMqttClient(void *arg)
         return rc;
     }
 
+    LOG("IOT_SetupConnInfo");
+
+    iotx_device_info_init();
+
     // TODO mistery code!
     /* Device AUTH */
-    if (0 != IOT_SetupConnInfo(PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, (void **)&pconn_info))
-    {
-        // EXAMPLE_TRACE("AUTH request failed!");
-        // rc = -1;
-        // release_buff();
-        release_buff(msg_buf);
-        release_buff(msg_readbuf);
-        return rc;
-    }
+    // if (0 != IOT_SetupConnInfo(PRODUCT_KEY, DEVICE_NAME, DEVICE_SECRET, (void **)&pconn_info))
+    // {
+    //     // EXAMPLE_TRACE("AUTH request failed!");
+    //     // rc = -1;
+    //     // release_buff();
+    //     release_buff(msg_buf);
+    //     release_buff(msg_readbuf);
+    //     return rc;
+    // }
 
     /* Initialize MQTT parameter */
     memset(&mqtt_params, 0x0, sizeof(mqtt_params));
+    LOG("mqtt param 0");
 
     mqtt_params.port = jsonInt(transport->config, "port");
     mqtt_params.host = jsonStr(transport->config, "host");
     mqtt_params.client_id = jsonStr(transport->config, "clientId");
+
+    LOG("mqtt param 0.5");
+
     mqtt_params.username = jsonStr(transport->config, "username");
     mqtt_params.password = jsonStr(transport->config, "password");
     mqtt_params.pub_key = jsonStr(transport->config, "pubkey");
+    LOG("mqtt param 1");
 
     mqtt_params.request_timeout_ms = 2000;
     mqtt_params.clean_session = 0;
     mqtt_params.keepalive_interval_ms = 60000;
     mqtt_params.pread_buf = msg_readbuf;
     mqtt_params.read_buf_size = MSG_LEN_MAX;
+    LOG("mqtt param 1.5");
+
     mqtt_params.pwrite_buf = msg_buf;
     mqtt_params.write_buf_size = MSG_LEN_MAX;
+    LOG("mqtt param 2");
 
     mqtt_params.handle_event.h_fp = eventHandleMqtt;
     mqtt_params.handle_event.pcontext = arg;
     /* Construct a MQTT client with specify parameter */
+    LOG("Start IOT_MQTT_Construct");
     void *gpclient = IOT_MQTT_Construct(&mqtt_params);
+    LOG("End IOT_MQTT_Construct");
     if (NULL == gpclient)
     {
         LOG("MQTT construct failed");
@@ -305,6 +322,7 @@ TRANSPORT *createMqttTransport(cJSON *config)
 {
     TRANSPORT *transport = aos_zalloc(sizeof(TRANSPORT));
     transport->config = config;
+    transport->context = NULL;
     aos_register_event_filter(EV_WIFI, wifiServiceEvent, transport);
     return transport;
 }

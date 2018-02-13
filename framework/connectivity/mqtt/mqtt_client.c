@@ -2341,10 +2341,10 @@ static int iotx_mc_handle_reconnect(iotx_mc_client_t *pClient)
     log_info("start reconnect");
 
     // REDO AUTH before each reconnection
-    if (0 != iotx_guider_authenticate()) {
-        log_err("run iotx_guider_authenticate() error!\n");
-        return -1;
-    }
+    // if (0 != iotx_guider_authenticate()) {
+    //     log_err("run iotx_guider_authenticate() error!\n");
+    //     return -1;
+    // }
 
     int rc = FAIL_RETURN;
     rc = iotx_mc_attempt_reconnect(pClient);

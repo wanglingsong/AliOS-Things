@@ -8,6 +8,7 @@
 #include <modules/gpio.h>
 #include <modules/dht.h>
 #include <modules/ir.h>
+#include <modules/cli.h>
 
 #if defined(IOT_LINK_MQTT)
 #include <modules/mqtt.h>
@@ -92,6 +93,12 @@ static void createTarget(LINK *link, cJSON *config)
     {
         link->writeFunc = targetIR;
         LOG("Post ir target set");
+        aos_post_event(EV_LINK_UPDATED, 0, 0);
+    }
+    else if (strcmp(type, "cli") == 0)
+    {
+        link->writeFunc = targetCli;
+        LOG("Post cli target set");
         aos_post_event(EV_LINK_UPDATED, 0, 0);
 
 #if defined(IOT_LINK_MQTT)
