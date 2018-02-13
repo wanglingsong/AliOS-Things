@@ -37,6 +37,7 @@ int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
     {
         return ret;
     }
+    // TODO
     ets_delay_us(22000);
     ret = hal_gpio_output_high(&gpio);
     // LOG("gpio output high? %d", ret);
