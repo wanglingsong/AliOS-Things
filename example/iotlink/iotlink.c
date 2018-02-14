@@ -49,16 +49,24 @@ int application_start(int argc, char *argv[])
     int buffer_length = sizeof(char) * MAX_CONFIG_FILE_LENGTH;
     char *config_buffer = aos_zalloc(buffer_length);
 
-    // TODO
-    char *tconfig = "{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null}";
-    aos_kv_set("transport_config", tconfig, strlen(tconfig), 1);
-
     if (aos_kv_get("transport_config", config_buffer, &buffer_length) == 0)
     {
         LOG("Transport config loaded from KV: size(%d) %s", buffer_length, config_buffer);
-        transport = createTransports(cJSON_Parse(config_buffer));
+        cJSON *transport_config = cJSON_Parse(config_buffer);
+        transport = createTransports(transport_config);
         LOG("Transport created");
+        cJSON_Delete(transport_config);
         memset(config_buffer, 0x0, buffer_length);
+    }
+    else
+    {
+        // TODO
+        char *tconfig = "{\"type\":\"mqtt\",\"host\":\"mqtt.pndsn.com\",\"port\":1883,\"username\":\"iotlink\",\"password\":\"iotlink\",\"clientId\":\"pub-c-bc9c7186-ff77-4968-9004-be75eeaaeffb/sub-c-66fa562c-849f-11e7-aa94-3ef20c3716d4/mib002\",\"pubkey\":null}";
+        aos_kv_set("transport_config", tconfig, strlen(tconfig), 1);
+        cJSON *transport_config = cJSON_Parse(tconfig);
+        transport = createTransports(transport_config);
+        LOG("Transport created");
+        cJSON_Delete(transport_config);
     }
 
     if (aos_kv_get("link_config", config_buffer, &buffer_length) == 0)
@@ -78,6 +86,7 @@ int application_start(int argc, char *argv[])
             LOG("Link setup");
         }
         memset(config_buffer, 0x0, buffer_length);
+        cJSON_Delete(linksConfig);
     }
 
 #if defined(IOT_LINK_WIFI)
@@ -86,16 +95,17 @@ int application_start(int argc, char *argv[])
     {
         LOG("WIFI config loaded from KV: size(%d) %s", buffer_length, config_buffer);
 
-        cJSON *wifi = cJSON_Parse(config_buffer);
+        cJSON *wifi_config = cJSON_Parse(config_buffer);
         netmgr_init();
         netmgr_ap_config_t netmgrConfig;
         memset(&netmgrConfig, 0, sizeof(netmgrConfig));
-        strcpy(netmgrConfig.ssid, jsonStr(wifi, "ssid"));
-        strcpy(netmgrConfig.pwd, jsonStr(wifi, "password"));
+        strcpy(netmgrConfig.ssid, jsonStr(wifi_config, "ssid"));
+        strcpy(netmgrConfig.pwd, jsonStr(wifi_config, "password"));
         netmgr_set_ap_config(&netmgrConfig);
         netmgr_start(false);
         LOG("netmgr started");
         memset(config_buffer, 0x0, buffer_length);
+        cJSON_Delete(wifi_config);
     }
 
 #endif

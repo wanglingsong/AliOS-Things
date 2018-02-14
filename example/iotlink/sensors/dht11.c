@@ -1,6 +1,4 @@
 #include <aos/aos.h>
-// TODO
-#include "rom/ets_sys.h"
 #include <hal/soc/gpio.h>
 #include "dht11.h"
 
@@ -10,6 +8,8 @@
 #define DHT11_TIMEOUT_ERROR_STAGE_4 -104
 #define DHT11_TIMEOUT_ERROR_STAGE_5 -105
 #define DHT11_TIMEOUT_ERROR_STAGE_6 -106
+
+extern void hal_delay_us(uint32_t);
 
 int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
 {
@@ -37,8 +37,7 @@ int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
     {
         return ret;
     }
-    // TODO
-    ets_delay_us(22000);
+    hal_delay_us(22000);
     ret = hal_gpio_output_high(&gpio);
     // LOG("gpio output high? %d", ret);
     if (ret != 0)
@@ -65,7 +64,7 @@ int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
             return DHT11_TIMEOUT_ERROR_STAGE_1;
         }
         counter += 10;
-        ets_delay_us(10);
+        hal_delay_us(10);
         ret = hal_gpio_input_get(&gpio, &value);
         if (ret != 0)
         {
@@ -83,7 +82,7 @@ int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
             return DHT11_TIMEOUT_ERROR_STAGE_2;
         }
         counter += 10;
-        ets_delay_us(10);
+        hal_delay_us(10);
         ret = hal_gpio_input_get(&gpio, &value);
         if (ret != 0)
         {
@@ -98,7 +97,7 @@ int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
             return DHT11_TIMEOUT_ERROR_STAGE_3;
         }
         counter += 10;
-        ets_delay_us(10);
+        hal_delay_us(10);
         ret = hal_gpio_input_get(&gpio, &value);
         if (ret != 0)
         {
@@ -121,7 +120,7 @@ int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
                 return DHT11_TIMEOUT_ERROR_STAGE_4;
             }
             counter += 10;
-            ets_delay_us(10);
+            hal_delay_us(10);
             ret = hal_gpio_input_get(&gpio, &value);
             if (ret != 0)
             {
@@ -138,7 +137,7 @@ int32_t dht11_read(DHT11 *ptdht11, uint8_t pin)
                 return DHT11_TIMEOUT_ERROR_STAGE_5;
             }
             counter += 10;
-            ets_delay_us(10);
+            hal_delay_us(10);
             ret = hal_gpio_input_get(&gpio, &value);
             if (ret != 0)
             {

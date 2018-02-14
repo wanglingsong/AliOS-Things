@@ -17,12 +17,13 @@ void targetCli(void *arg)
         {
             hal_reboot();
         }
-        else if (strcmp(cmd, "update-config") == 0)
+        else if (strcmp(cmd, "set-kv") == 0)
         {
             // TODO
-            char *config = jsonStr(json, "config");
-            aos_kv_set("iotlink_config", config, strlen(config), 1);
-            LOG("Saved config to KV from cli target: %s", config);
+            char *key = jsonStr(json, "key");
+            char *value = jsonStr(json, "value");
+            aos_kv_set(key, value, strlen(value), 1);
+            LOG("Saved key:%s value:%s to KV from cli target", key, value);
         }
         else
         {

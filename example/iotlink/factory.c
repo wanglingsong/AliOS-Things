@@ -119,8 +119,9 @@ LINK *createLink(cJSON *config)
 {
     LINK *link = aos_zalloc(sizeof(LINK));
     link->running = false;
-    link->sourceConfig = jsonObj(config, "source");
-    link->targetConfig = jsonObj(config, "target");
+    // TODO
+    link->sourceConfig = cJSON_Duplicate(jsonObj(config, "source"), true);
+    link->targetConfig = cJSON_Duplicate(jsonObj(config, "target"), true);
     return link;
 }
 

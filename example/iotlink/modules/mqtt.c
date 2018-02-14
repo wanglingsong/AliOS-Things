@@ -305,7 +305,8 @@ void targetMqtt(void *arg)
 TRANSPORT *createMqttTransport(cJSON *config)
 {
     TRANSPORT *transport = aos_zalloc(sizeof(TRANSPORT));
-    transport->config = config;
+    // TODO
+    transport->config = cJSON_Duplicate(config, true);
     transport->context = NULL;
     aos_register_event_filter(EV_WIFI, wifiServiceEvent, transport);
     return transport;
